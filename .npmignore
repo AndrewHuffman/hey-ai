@@ -1,0 +1,17 @@
+# Source files (dist is published)
+src/
+
+# Tests
+tests/
+
+# Config files
+.github/
+.husky/
+tsconfig.json
+jest.config.js
+commitlint.config.js
+
+# Dev files
+*.log
+.DS_Store
+

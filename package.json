@@ -1,7 +1,7 @@
 {
   "name": "hey-ai",
   "version": "0.1.3",
-  "description": "",
+  "description": "AI-powered CLI for quick terminal questions - gathers context and suggests commands",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -14,7 +14,16 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky"
   },
-  "keywords": [],
+  "keywords": [
+    "cli",
+    "ai",
+    "llm",
+    "terminal",
+    "shell",
+    "gpt",
+    "claude",
+    "openai"
+  ],
   "author": "",
   "license": "ISC",
   "pnpm": {
@@ -47,5 +56,13 @@
     "ts-jest": "^29.4.6",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AndrewHuffman/hey-ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AndrewHuffman/hey-ai/issues"
+  },
+  "homepage": "https://github.com/AndrewHuffman/hey-ai#readme"
 }
