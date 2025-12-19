@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       release_type:
-        description: 'Release type (auto, patch, minor, major)'
+        description: "Release type (auto, patch, minor, major)"
         required: false
-        default: 'auto'
+        default: "auto"
         type: choice
         options:
           - auto
@@ -16,7 +16,7 @@ on:
 
 permissions:
   contents: write
-  id-token: write  # Required for npm Trusted Publishing (OIDC)
+  id-token: write # Required for npm Trusted Publishing (OIDC)
 
 jobs:
   release:
@@ -26,13 +26,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}  # Uses deploy key to bypass branch rules
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }} # Uses deploy key to bypass branch rules
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Upgrade npm for Trusted Publishing
         run: |
@@ -60,13 +60,13 @@ jobs:
         run: |
           # Get commits since last tag
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          
+
           if [ -z "$LAST_TAG" ]; then
             COMMITS=$(git log --pretty=format:"%s" --no-merges)
           else
             COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"%s" --no-merges)
           fi
-          
+
           # Determine bump type from conventional commits
           if [ "${{ inputs.release_type }}" != "auto" ]; then
             BUMP="${{ inputs.release_type }}"
@@ -77,7 +77,7 @@ jobs:
           else
             BUMP="patch"
           fi
-          
+
           echo "bump=$BUMP" >> $GITHUB_OUTPUT
           echo "Determined version bump: $BUMP"
 
@@ -93,13 +93,13 @@ jobs:
         id: changelog
         run: |
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          
+
           if [ -z "$LAST_TAG" ]; then
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
           else
             CHANGELOG=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
           fi
-          
+
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -129,17 +129,17 @@ jobs:
           tag_name: ${{ steps.bump.outputs.new_version }}
           body: |
             ## Changes
-            
+
             ${{ steps.changelog.outputs.changelog }}
-            
+
             ## Install
-            
+
             ```bash
             npm install -g hey-ai
             ```
-            
+
             ## Prerequisites
-            
+
             Requires the [llm CLI](https://llm.datasette.io/):
             ```bash
             brew install llm  # or: pipx install llm
