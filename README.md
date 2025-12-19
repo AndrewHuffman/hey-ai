@@ -2,6 +2,27 @@
 
 `hey-ai` is an enhanced command-line interface for LLM interactions, designed specifically for terminal productivity. It automatically gathers context from your current environment—including file structure, command history, and session history—to provide more accurate and executable terminal commands.
 
+## Quick Start
+
+```bash
+# Install hey-ai
+npm install -g hey-ai
+
+# Install the llm CLI (required dependency)
+# Choose one of these methods:
+brew install llm          # macOS with Homebrew
+pipx install llm          # Cross-platform with pipx
+pip install llm           # With pip
+uv tool install llm       # With uv
+
+# Set up your API key (for OpenAI)
+llm keys set openai
+# Paste your OpenAI API key
+
+# Start asking questions!
+hey-ai "how do I find all large files in this directory?"
+```
+
 ## Key Features
 
 - **🧠 Automatic Context Gathering**:
@@ -18,20 +39,60 @@
 
 ## Prerequisites
 
-- [**llm**](https://llm.datasette.io/en/stable/setup.html): This tool acts as a wrapper around the `llm` CLI.
-- **zsh**: Currently optimized for zsh history parsing.
+- **Node.js** 18+ 
+- [**llm**](https://llm.datasette.io/en/stable/setup.html): The underlying LLM CLI tool
+- **zsh**: Currently optimized for zsh history parsing
+
+### Installing llm
+
+`hey-ai` uses Simon Willison's excellent [`llm`](https://llm.datasette.io/) CLI under the hood. Install it using one of these methods:
+
+```bash
+# macOS with Homebrew (easiest)
+brew install llm
+
+# Cross-platform with pipx (recommended for isolation)
+pipx install llm
+
+# With pip
+pip install llm
+
+# With uv
+uv tool install llm
+```
+
+Then configure your API key:
+
+```bash
+# For OpenAI (default)
+llm keys set openai
+
+# Or install plugins for other providers
+llm install llm-anthropic    # For Claude
+llm install llm-gemini       # For Gemini
+llm install llm-ollama       # For local models via Ollama
+```
+
+See the [llm documentation](https://llm.datasette.io/en/stable/setup.html) for more details.
 
 ## Installation
 
 ```bash
-# Clone the repository
+# Install globally from npm
+npm install -g hey-ai
+
+# Or with pnpm
+pnpm add -g hey-ai
+```
+
+### From Source
+
+```bash
 git clone https://github.com/andrewhuffman/hey-ai.git
 cd hey-ai
-
-# Install dependencies and link globally
-npm install
-npm run build
-npm link
+pnpm install
+pnpm run build
+pnpm link --global
 ```
 
 ## Usage
@@ -68,6 +129,19 @@ Options:
   --show-prefs         Show detected command preferences
   -V, --version        output the version number
   -h, --help           display help for command
+```
+
+### Using Different Models
+
+```bash
+# Use a specific model
+hey-ai -m gpt-4o "explain this error"
+
+# Use Claude (requires llm-anthropic plugin)
+hey-ai -m claude-3.5-sonnet "optimize this code"
+
+# Use a local model via Ollama (requires llm-ollama plugin)
+hey-ai -m llama3.2:latest "what does this script do?"
 ```
 
 ### Shell Completions
@@ -160,4 +234,3 @@ You can set a default model in three ways:
 ## License
 
 ISC
-
