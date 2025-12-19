@@ -2,22 +2,20 @@
 
 `hey-ai` is an enhanced command-line interface for LLM interactions, designed specifically for terminal productivity. It automatically gathers context from your current environment—including file structure, command history, and session history—to provide more accurate and executable terminal commands.
 
+## Demo
+
+![Demo](./tools/demos/demo.gif)
+
 ## Quick Start
 
 ```bash
 # Install hey-ai
 npm install -g hey-ai
 
-# Install the llm CLI (required dependency)
-# Choose one of these methods:
-brew install llm          # macOS with Homebrew
-pipx install llm          # Cross-platform with pipx
-pip install llm           # With pip
-uv tool install llm       # With uv
-
-# Set up your API key (for OpenAI)
-llm keys set openai
-# Paste your OpenAI API key
+# Set up your API key (at least one is required)
+export ANTHROPIC_API_KEY=your-key   # For Claude (Recommended)
+export OPENAI_API_KEY=your-key      # For GPT
+export GEMINI_API_KEY=your-key      # For Gemini
 
 # Start asking questions!
 hey-ai "how do I find all large files in this directory?"
@@ -29,51 +27,25 @@ hey-ai "how do I find all large files in this directory?"
   - **ZSH History**: Includes the last 15 commands to understand what you're currently doing.
   - **File Context**: Scans the current directory (respecting `.gitignore`) and includes the content of files mentioned in your query.
   - **Session History**: Persistent SQLite-backed history of previous AI interactions for conversational continuity.
-  - **Modern Command Detection**: Detects modern CLI tools you have installed (like `fd`, `rg`, `bat`, `eza`, `delta`) and instructs the AI to prefer them over legacy commands.
+  - **Modern Command Detection**: Detects modern CLI tools you have installed (like `fd`, `rg`, `bat`, `eza`, `delta`) and prefers them over legacy commands.
 
-- **🔌 MCP (Model Context Protocol) Support**: Connects to MCP servers to expand the LLM's capabilities.
-  - **Tools**: Automatically includes available MCP tools in the context so the AI knows what's possible.
-  - **Resources**: Fetches and includes relevant MCP resources in the prompt context.
-- **📋 Clipboard Integration**: Automatically extracts the last executable command block from the AI's response and copies it to your clipboard.
-- **🚀 Fast & Flexible**: Built on top of the excellent [`llm`](https://llm.datasette.io/) CLI. Supports streaming and easy model switching.
+- **🔌 Active MCP (Model Context Protocol) Support**: 
+  - **Agentic Tool Use**: The AI doesn't just see tools; it can **actively call them** to read files, search the web, or modify your system (if permitted).
+  - **Visual Feedback**: Real-time indicators show when the AI is using a tool:
+    ```
+    🔧 [MCP: read_text_file via filesystem]
+       ✓ completed in 4ms
+    ```
+  - **Universal Integration**: Support for any MCP server (filesystem, brave-search, fetch, etc.).
+
+- **📋 Clipboard Integration**: Automatically extracts the suggested command from the AI's response and copies it to your clipboard.
+- **🚀 Multi-Provider SDK**: Built on the Vercel AI SDK. native support for Anthropic, OpenAI, and Google Gemini without external wrappers.
 
 ## Prerequisites
 
 - **Node.js** 18+ 
-- [**llm**](https://llm.datasette.io/en/stable/setup.html): The underlying LLM CLI tool
+- **API Key**: One of `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GEMINI_API_KEY`.
 - **zsh**: Currently optimized for zsh history parsing
-
-### Installing llm
-
-`hey-ai` uses Simon Willison's excellent [`llm`](https://llm.datasette.io/) CLI under the hood. Install it using one of these methods:
-
-```bash
-# macOS with Homebrew (easiest)
-brew install llm
-
-# Cross-platform with pipx (recommended for isolation)
-pipx install llm
-
-# With pip
-pip install llm
-
-# With uv
-uv tool install llm
-```
-
-Then configure your API key:
-
-```bash
-# For OpenAI (default)
-llm keys set openai
-
-# Or install plugins for other providers
-llm install llm-anthropic    # For Claude
-llm install llm-gemini       # For Gemini
-llm install llm-ollama       # For local models via Ollama
-```
-
-See the [llm documentation](https://llm.datasette.io/en/stable/setup.html) for more details.
 
 ## Installation
 
@@ -109,9 +81,9 @@ hey-ai
 
 The tool will:
 1. Gather context (files, history, preferred commands).
-2. Call the LLM with the context and your query.
-3. Stream the response to the terminal.
-4. **Copy the suggested command to your clipboard** automatically.
+2. Connect to configured MCP servers.
+3. Call the LLM (which may call MCP tools recursively).
+4. Stream the response and **copy the suggest command to your clipboard**.
 
 ### Options
 
@@ -119,7 +91,7 @@ The tool will:
 hey-ai [query] [options]
 
 Options:
-  -m, --model <model>  Specify the model to use (passed to llm)
+  -m, --model <model>  Specify the model to use (claude, gpt, gemini)
   --no-history         Do not include history context
   --no-files           Do not include file context
   --system <prompt>    System prompt override
@@ -133,16 +105,28 @@ Options:
 
 ### Using Different Models
 
+`hey-ai` supports various providers and friendly aliases:
+
 ```bash
-# Use a specific model
-hey-ai -m gpt-4o "explain this error"
+# Use Claude (Default recommended)
+hey-ai -m haiku "explain this error"
+hey-ai -m sonnet "optimize this code"
 
-# Use Claude (requires llm-anthropic plugin)
-hey-ai -m claude-3.5-sonnet "optimize this code"
+# Use OpenAI
+hey-ai -m gpt-4o "what does this script do?"
+hey-ai -m gpt-4 "summarize this"
 
-# Use a local model via Ollama (requires llm-ollama plugin)
-hey-ai -m llama3.2:latest "what does this script do?"
+# Use Google Gemini
+hey-ai -m gemini "help me with this git command"
 ```
+
+**Common Aliases:**
+- `haiku` → `claude-3-5-haiku-20241022`
+- `sonnet` → `claude-3-5-sonnet-20241022`
+- `opus` → `claude-3-opus-20240229`
+- `gemini` → `gemini-1.5-flash`
+- `gpt4` → `gpt-4o`
+
 
 ### Shell Completions
 
@@ -216,19 +200,16 @@ hey-ai --show-prefs
 
 ### Default Model
 
-You can set a default model in three ways:
+You can set a default model and your API keys in two ways:
 
-1. **Environment Variable**: Set `LLM_MODEL` in your shell.
+1. **Environment Variables** (Recommended):
    ```bash
-   export LLM_MODEL=gpt-4o
+   export ANTHROPIC_API_KEY=your-key
+   export LLM_MODEL=haiku
    ```
-2. **CLI Config**: Use the built-in config command.
+2. **CLI Config**: Use the built-in config command to set the default model.
    ```bash
-   hey-ai config set defaultModel gpt-4o
-   ```
-3. **LLM Tool Default**: `hey-ai` will respect the default model set in the underlying `llm` tool.
-   ```bash
-   llm models default gpt-4o
+   hey-ai config set defaultModel haiku
    ```
 
 ## License

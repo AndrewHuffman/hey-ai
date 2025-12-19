@@ -4,7 +4,7 @@ import clipboardy from 'clipboardy';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { RagEngine } from './rag/engine.js';
-import { LlmWrapper } from './llm/wrapper.js';
+import { LlmWrapper, createToolCallHandlers, McpToolDef } from './llm/wrapper.js';
 import { CommandDetector } from './context/commands.js';
 import { ConfigManager } from './config.js';
 
@@ -23,8 +23,32 @@ async function processQuery(query: string, options: any, rag: RagEngine, llm: Ll
     const config = await configManager.loadConfig();
     const model = options.model || config.defaultModel;
 
+    // Get MCP tool definitions for function calling
+    const mcpToolDefs = await rag.mcp.getToolDefinitionsForGemini();
+    const tools: McpToolDef[] = mcpToolDefs.map(t => ({
+      name: t.name,
+      description: t.description || '',
+      parameters: t.parameters
+    }));
+
+    // Create tool call handlers for visual feedback
+    const toolHandlers = createToolCallHandlers(
+      (name) => rag.mcp.getServerForTool(name)
+    );
+
     const systemPrompt = options.system || 
-      `You are a helpful CLI assistant. Provide accurate, executable zsh commands in markdown code blocks. Be concise.`;
+`You are a helpful CLI assistant with access to MCP tools.
+
+## Tool Usage Guidelines
+- Use your available tools when the user's request requires external data (reading files, fetching URLs, etc.)
+- If you find that a file reading or external action is needed, use the appropriate tool
+- If a tool fails, explain the error and suggest alternatives
+- For simple questions about commands, answer directly without tools
+
+## Response Format
+- Be concise and action-oriented
+- Provide executable zsh commands in markdown code blocks
+- When showing file contents, format them appropriately`;
 
     const finalPrompt = context 
       ? `${context}\n\n## User Query\n${query}`
@@ -34,7 +58,12 @@ async function processQuery(query: string, options: any, rag: RagEngine, llm: Ll
     
     const response = await llm.streamPrompt(finalPrompt, {
       model: model,
-      system: systemPrompt
+      system: systemPrompt,
+      tools: tools.length > 0 ? tools : undefined,
+      onToolCall: async (toolName, args) => {
+        return rag.mcp.callTool(toolName, args);
+      },
+      ...toolHandlers
     });
 
     // Save to session history
@@ -66,6 +95,7 @@ async function processQuery(query: string, options: any, rag: RagEngine, llm: Ll
   }
 }
 
+
 export function createProgram() {
   const program = new Command();
 
@@ -87,71 +117,78 @@ export function createProgram() {
         ? (...args: any[]) => console.log(chalk.gray('[debug]'), ...args)
         : () => {};
 
-      // Show preferences mode
-      if (options.showPrefs) {
-        const detector = new CommandDetector();
-        const prefs = detector.getPreferences();
-        console.log(chalk.bold('Detected command preferences:'));
-        if (Object.keys(prefs).length === 0) {
-          console.log(chalk.gray('  No alternative commands detected'));
-        } else {
-          for (const [generic, preferred] of Object.entries(prefs)) {
-            console.log(`  ${chalk.red(generic)} → ${chalk.green(preferred)}`);
-          }
-        }
-        console.log(chalk.gray('\nAlternatives searched: fd, rg, bat, eza, delta, sd, dust, htop, tldr, z, procs...'));
-        return;
-      }
-
+      const detector = new CommandDetector();
       const rag = new RagEngine();
       const llm = new LlmWrapper();
-
-      // Show context mode (doesn't need a real query)
-      if (options.showContext) {
-        console.log(chalk.gray('Gathering context...'));
-        await rag.init();
-        const context = await rag.assembleContext(query || '');
-        console.log(chalk.bold('\n=== Assembled Context ===\n'));
-        console.log(context || '(no context)');
-        console.log(chalk.bold('\n=== End Context ===\n'));
-        return;
-      }
-
-      if (!query) {
-        if (!process.stdin.isTTY) {
-          const chunks = [];
-          for await (const chunk of process.stdin) {
-            chunks.push(chunk);
-          }
-          query = Buffer.concat(chunks).toString().trim();
-        } else {
-          // Interactive mode
-          console.log(chalk.cyan.bold('Entering interactive mode. Type "exit" or "quit" to leave.'));
-          await rag.init();
-          
-          while (true) {
-            const { input } = await inquirer.prompt([{
-              type: 'input',
-              name: 'input',
-              message: '❯',
-              prefix: ''
-            }]);
-
-            if (!input || input.toLowerCase() === 'exit' || input.toLowerCase() === 'quit') {
-              break;
+      
+      try {
+        // Show preferences mode
+        if (options.showPrefs) {
+          const prefs = detector.getPreferences();
+          console.log(chalk.bold('Detected command preferences:'));
+          if (Object.keys(prefs).length === 0) {
+            console.log(chalk.gray('  No alternative commands detected'));
+          } else {
+            for (const [generic, preferred] of Object.entries(prefs)) {
+              console.log(`  ${chalk.red(generic)} → ${chalk.green(preferred)}`);
             }
-
-            await processQuery(input, options, rag, llm, log);
-            console.log(); // Newline for spacing
           }
+          console.log(chalk.gray('\nAlternatives searched: fd, rg, bat, eza, delta, sd, dust, htop, tldr, z, procs...'));
           return;
         }
-      }
 
-      try {
-        await rag.init();
-        await processQuery(query, options, rag, llm, log);
+        // Show context mode (doesn't need a real query)
+        if (options.showContext) {
+          console.log(chalk.gray('Gathering context...'));
+          await rag.init();
+          const context = await rag.assembleContext(query || '');
+          console.log(chalk.bold('\n=== Assembled Context ===\n'));
+          console.log(context || '(no context)');
+          console.log(chalk.bold('\n=== End Context ===\n'));
+          await rag.mcp.disconnectAll();
+          return;
+        }
+
+        if (!query) {
+          if (!process.stdin.isTTY) {
+            const chunks = [];
+            for await (const chunk of process.stdin) {
+              chunks.push(chunk);
+            }
+            query = Buffer.concat(chunks).toString().trim();
+          } else {
+            // Interactive mode
+            console.log(chalk.cyan.bold('Entering interactive mode. Type "exit" or "quit" to leave.'));
+            await rag.init();
+            
+            while (true) {
+              const { input } = await inquirer.prompt([{
+                type: 'input',
+                name: 'input',
+                message: '❯',
+                prefix: ''
+              }]);
+
+              if (!input || input.toLowerCase() === 'exit' || input.toLowerCase() === 'quit') {
+                break;
+              }
+
+              await processQuery(input, options, rag, llm, log);
+              console.log(); // Newline for spacing
+            }
+            await rag.mcp.disconnectAll();
+            return;
+          }
+        }
+
+        if (query) {
+          await rag.init();
+          await processQuery(query, options, rag, llm, log);
+          await rag.mcp.disconnectAll();
+        }
       } catch (error) {
+        log('Action error:', error);
+        await rag.mcp.disconnectAll();
         process.exit(1);
       }
     });

@@ -11,7 +11,7 @@ export class RagEngine {
   private files: FileContext;
   private session: SessionHistory;
   private commands: CommandDetector;
-  private mcp: McpManager;
+  public mcp: McpManager;
 
   constructor() {
     this.history = new ZshHistory();
@@ -117,7 +117,7 @@ export class RagEngine {
       'pip', 'brew', 'apt', 'yum', 'dnf', 'pacman', 'kill', 'ps', 'top',
       'htop', 'df', 'du', 'free', 'mount', 'umount', 'ln', 'diff', 'patch',
       'make', 'gcc', 'go', 'cargo', 'rustc', 'java', 'javac', 'mvn', 'gradle',
-      'fd', 'rg', 'bat', 'eza', 'exa', 'delta', 'jq', 'yq', 'fzf', 'tmux',
+      'fd', 'rg', 'bat', 'eza', 'exa', 'delta', 'sd', 'dust', 'htop', 'tldr', 'z', 'procs',
       'screen', 'vim', 'nvim', 'nano', 'emacs', 'code', 'subl', 'pbcopy',
       'pbpaste', 'xclip', 'open', 'xdg-open', 'ffmpeg', 'convert', 'magick'
     ];
@@ -211,13 +211,13 @@ export class RagEngine {
       }
     }
 
-    // 6. MCP Context
+    // 6. MCP Tools Available (informational - actual execution via function calling)
     const mcpTools = await this.mcp.getTools();
     if (mcpTools.length > 0) {
-      parts.push('## Available MCP Tools');
-      parts.push('You have access to these tools through MCP servers. Mention them if they would be useful:');
+      parts.push('## MCP Tools Available');
+      parts.push('You have access to these tools via function calling. Use them when the user\'s request requires reading files, fetching data, or other external actions:');
       mcpTools.forEach(tool => {
-        parts.push(`- ${tool.name}: ${tool.description}`);
+        parts.push(`- **${tool.name}** (${tool.serverName}): ${tool.description}`);
       });
     }
 

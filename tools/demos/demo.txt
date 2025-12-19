@@ -1,0 +1,38 @@
+# ────────────────────────────────────────────────
+#        hey-ai: a cli-based ai assistant        
+#     https://github.com/AndrewHuffman/hey-ai 
+# ────────────────────────────────────────────────
+
+
+# ────────────────────────────────────────────────
+# Basic usage
+# ────────────────────────────────────────────────
+
+hey-ai "hello! how are you?"
+
+# ────────────────────────────────────────────────
+# Query using specific models
+# ────────────────────────────────────────────────
+
+hey-ai --model claude-haiku-4.5 "find all files in the current directory older than 30 minutes and larger than 1kb"
+
+!paste
+
+# ─────────────────────────────
+# Includes helpful context
+# ─────────────────────────────
+hey-ai --show-context
+
+# ─────────────────────────────
+# Reference past responses
+# ─────────────────────────────
+
+hey-ai "update the `fd` command you just gave me to sort by size"
+
+# ─────────────────────────────
+# Can use MCP to retrieve file contents
+# ─────────────────────────────
+
+hey-ai "summarize the contents of ./package.json"
+
+hey-ai "I just want to make sure it looks correct! does it?"
