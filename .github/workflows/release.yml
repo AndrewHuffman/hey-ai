@@ -31,13 +31,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'  # Node 22 comes with npm 10.x, we'll upgrade
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Upgrade npm for Trusted Publishing
         run: |
           npm install -g npm@latest
-          npm --version
+          echo "npm version: $(npm --version)"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -81,10 +81,10 @@ jobs:
           echo "bump=$BUMP" >> $GITHUB_OUTPUT
           echo "Determined version bump: $BUMP"
 
-      - name: Bump version
+      - name: Bump version (local only)
         id: bump
         run: |
-          # Bump version without creating git tag (we'll do that ourselves)
+          # Bump version without creating git tag
           NEW_VERSION=$(npm version ${{ steps.version.outputs.bump }} --no-git-tag-version)
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "New version: $NEW_VERSION"
@@ -104,10 +104,16 @@ jobs:
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      # IMPORTANT: Publish to npm BEFORE pushing anything
+      # If this fails, no commit/tag will be pushed
+      - name: Publish to npm (Trusted Publishing)
+        run: npm publish --access public
+
+      # Only runs if npm publish succeeded
       - name: Commit and tag
         run: |
-          git add package.json
-          git commit -m "chore(release): ${{ steps.bump.outputs.new_version }}"
+          git add package.json pnpm-lock.yaml
+          git commit -m "chore(release): ${{ steps.bump.outputs.new_version }}" || echo "No changes to commit"
           git tag ${{ steps.bump.outputs.new_version }}
 
       - name: Push changes
@@ -141,9 +147,3 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Trusted Publishing - no NPM_TOKEN needed!
-      # Uses OIDC to authenticate with npm directly
-      # Requires npm 11.5.1+ and trusted publisher configured on npmjs.com
-      - name: Publish to npm (Trusted Publishing)
-        run: npm publish --access public
