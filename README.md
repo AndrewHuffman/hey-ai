@@ -1,6 +1,6 @@
-# ask-ai
+# hey-ai
 
-`ask-ai` is an enhanced command-line interface for LLM interactions, designed specifically for terminal productivity. It automatically gathers context from your current environment—including file structure, command history, and session history—to provide more accurate and executable terminal commands.
+`hey-ai` is an enhanced command-line interface for LLM interactions, designed specifically for terminal productivity. It automatically gathers context from your current environment—including file structure, command history, and session history—to provide more accurate and executable terminal commands.
 
 ## Key Features
 
@@ -25,8 +25,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/andrewhuffman/ask-ai.git
-cd ask-ai
+git clone https://github.com/andrewhuffman/hey-ai.git
+cd hey-ai
 
 # Install dependencies and link globally
 npm install
@@ -38,12 +38,12 @@ npm link
 
 Ask a question directly:
 ```bash
-ask-ai "how do I find all large files in the current directory?"
+hey-ai "how do I find all large files in the current directory?"
 ```
 
 Enter **interactive mode** by omitting the query:
 ```bash
-ask-ai
+hey-ai
 ```
 
 The tool will:
@@ -55,7 +55,7 @@ The tool will:
 ### Options
 
 ```bash
-ask-ai [query] [options]
+hey-ai [query] [options]
 
 Options:
   -m, --model <model>  Specify the model to use (passed to llm)
@@ -74,7 +74,7 @@ Options:
 
 Generate zsh completions:
 ```bash
-ask-ai completion > ~/.zsh/completion/_ask-ai
+hey-ai completion > ~/.zsh/completion/_hey-ai
 ```
 Then add the following to your `~/.zshrc`:
 ```bash
@@ -87,49 +87,49 @@ compinit
 
 ### MCP Servers
 
-MCP servers are stored in `~/.config/ask-ai/config.json` and can be managed via CLI commands.
+MCP servers are stored in `~/.config/hey-ai/config.json` and can be managed via CLI commands.
 
 **List available presets:**
 ```bash
-ask-ai mcp presets
+hey-ai mcp presets
 ```
 
 **Add preset servers:**
 ```bash
 # Add deepwiki (remote SSE server for GitHub repo documentation)
-ask-ai mcp add-preset deepwiki
+hey-ai mcp add-preset deepwiki
 
 # Add filesystem access with custom root path
-ask-ai mcp add-preset filesystem --path /path/to/dir
+hey-ai mcp add-preset filesystem --path /path/to/dir
 
 # Add brave search with API key
-ask-ai mcp add-preset brave-search -e BRAVE_API_KEY=your-key
+hey-ai mcp add-preset brave-search -e BRAVE_API_KEY=your-key
 
 # Add web fetcher
-ask-ai mcp add-preset fetch
+hey-ai mcp add-preset fetch
 ```
 
 **Add custom servers:**
 ```bash
 # Add a local stdio server
-ask-ai mcp add my-server node /path/to/server.js
+hey-ai mcp add my-server node /path/to/server.js
 
 # Add with environment variables (use -- to separate)
-ask-ai mcp add my-server -e API_KEY=secret -- npx -y my-mcp-server
+hey-ai mcp add my-server -e API_KEY=secret -- npx -y my-mcp-server
 
 # Add a remote HTTP/SSE server
-ask-ai mcp add -t http stripe https://mcp.stripe.com
-ask-ai mcp add -t sse asana https://mcp.asana.com/sse
+hey-ai mcp add -t http stripe https://mcp.stripe.com
+hey-ai mcp add -t sse asana https://mcp.asana.com/sse
 
 # Add from JSON config
-ask-ai mcp add-json myserver '{"command":"node","args":["server.js"]}'
+hey-ai mcp add-json myserver '{"command":"node","args":["server.js"]}'
 ```
 
 **Manage servers:**
 ```bash
-ask-ai mcp list              # List all configured servers
-ask-ai mcp get <name>        # Show details for a server
-ask-ai mcp remove <name>     # Remove a server
+hey-ai mcp list              # List all configured servers
+hey-ai mcp get <name>        # Show details for a server
+hey-ai mcp remove <name>     # Remove a server
 ```
 
 ### Command Preferences
@@ -137,7 +137,7 @@ ask-ai mcp remove <name>     # Remove a server
 To see which modern command alternatives were detected on your system:
 
 ```bash
-ask-ai --show-prefs
+hey-ai --show-prefs
 ```
 
 ### Default Model
@@ -150,9 +150,9 @@ You can set a default model in three ways:
    ```
 2. **CLI Config**: Use the built-in config command.
    ```bash
-   ask-ai config set defaultModel gpt-4o
+   hey-ai config set defaultModel gpt-4o
    ```
-3. **LLM Tool Default**: `ask-ai` will respect the default model set in the underlying `llm` tool.
+3. **LLM Tool Default**: `hey-ai` will respect the default model set in the underlying `llm` tool.
    ```bash
    llm models default gpt-4o
    ```

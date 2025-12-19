@@ -15,7 +15,7 @@ export class SessionHistory {
   private db: Database.Database;
 
   constructor(dbPath?: string) {
-    const configDir = path.join(os.homedir(), '.config', 'ask-ai');
+    const configDir = path.join(os.homedir(), '.config', 'hey-ai');
     if (!fs.existsSync(configDir)) {
       fs.mkdirSync(configDir, { recursive: true });
     }

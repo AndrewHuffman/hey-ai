@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as os from 'os';
 
 describe('FileContext', () => {
-  const testDir = path.join(os.tmpdir(), 'ask-ai-test-files');
+  const testDir = path.join(os.tmpdir(), 'hey-ai-test-files');
 
   beforeAll(async () => {
     await fs.mkdir(testDir, { recursive: true });

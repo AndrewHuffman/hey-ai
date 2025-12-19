@@ -24,7 +24,7 @@ export class McpManager {
         });
 
         const client = new Client({
-          name: "ask-ai-client",
+          name: "hey-ai-client",
           version: "1.0.0",
         }, {
           capabilities: {}

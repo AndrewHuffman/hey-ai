@@ -62,7 +62,7 @@ jobs:
             ## Install
             
             ```bash
-            npm install -g ask-ai
+            npm install -g hey-ai
             ```
           draft: false
           prerelease: false

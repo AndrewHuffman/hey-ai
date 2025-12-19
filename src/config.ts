@@ -21,7 +21,7 @@ export class ConfigManager {
   private configPath: string;
 
   constructor(configPath?: string) {
-    this.configPath = configPath || path.join(os.homedir(), '.config', 'ask-ai', 'config.json');
+    this.configPath = configPath || path.join(os.homedir(), '.config', 'hey-ai', 'config.json');
   }
 
   async loadConfig(): Promise<AppConfig> {
@@ -35,7 +35,7 @@ export class ConfigManager {
       }
       // If mcp.json exists but config.json doesn't, we might want to migrate or check both
       // For now, let's check for the old mcp.json if config.json is missing
-      const oldMcpPath = path.join(os.homedir(), '.config', 'ask-ai', 'mcp.json');
+      const oldMcpPath = path.join(os.homedir(), '.config', 'hey-ai', 'mcp.json');
       try {
         const content = await fs.readFile(oldMcpPath, 'utf-8');
         const json = JSON.parse(content);

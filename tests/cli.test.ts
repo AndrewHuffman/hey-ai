@@ -43,7 +43,7 @@ describe('CLI Arguments', () => {
     const program = createProgram();
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     
-    await program.parseAsync(['node', 'ask-ai', '--show-prefs']);
+    await program.parseAsync(['node', 'hey-ai', '--show-prefs']);
     
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Detected command preferences:'));
     consoleSpy.mockRestore();
@@ -54,7 +54,7 @@ describe('CLI Arguments', () => {
     const program = createProgram();
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     
-    await program.parseAsync(['node', 'ask-ai', '--show-context']);
+    await program.parseAsync(['node', 'hey-ai', '--show-context']);
     
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('=== Assembled Context ==='));
     consoleSpy.mockRestore();
@@ -65,7 +65,7 @@ describe('CLI Arguments', () => {
     const program = createProgram();
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     
-    await program.parseAsync(['node', 'ask-ai', 'test query', '--no-context']);
+    await program.parseAsync(['node', 'hey-ai', 'test query', '--no-context']);
     
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Thinking...'));
     consoleSpy.mockRestore();
@@ -76,7 +76,7 @@ describe('CLI Arguments', () => {
     const program = createProgram();
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     
-    await program.parseAsync(['node', 'ask-ai', 'list my files']);
+    await program.parseAsync(['node', 'hey-ai', 'list my files']);
     
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Gathering context...'));
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Thinking...'));

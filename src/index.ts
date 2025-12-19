@@ -70,7 +70,7 @@ export function createProgram() {
   const program = new Command();
 
   program
-    .name('ask-ai')
+    .name('hey-ai')
     .description('Enhanced CLI for LLM interactions with context and MCP support')
     .version('1.0.0')
     .argument('[query]', 'The query to ask the LLM (omitting starts interactive mode)')
@@ -160,9 +160,9 @@ export function createProgram() {
     .command('completion')
     .description('Generate zsh completion script')
     .action(() => {
-      const script = `#compdef ask-ai
+      const script = `#compdef hey-ai
 
-_ask-ai() {
+_hey-ai() {
   local line state
 
   _arguments -C \
@@ -219,7 +219,7 @@ _ask-ai() {
   esac
 }
 
-_ask-ai "$@"
+_hey-ai "$@"
 `;
       console.log(script);
     });
@@ -324,7 +324,7 @@ _ask-ai "$@"
         console.log(`    ${preset.description}`);
         console.log();
       }
-      console.log(chalk.gray('Add a preset with: ask-ai mcp add-preset <name>'));
+      console.log(chalk.gray('Add a preset with: hey-ai mcp add-preset <name>'));
     });
 
   mcpCmd
@@ -390,8 +390,8 @@ _ask-ai "$@"
         if (name === 'brave-search') {
           console.log(chalk.yellow('\n⚠ Note: Requires BRAVE_API_KEY environment variable'));
           console.log(chalk.gray('  Get an API key at: https://brave.com/search/api/'));
-          console.log(chalk.gray('  Then run: ask-ai mcp remove brave-search'));
-          console.log(chalk.gray('           ask-ai mcp add-preset brave-search -e BRAVE_API_KEY=your-key'));
+          console.log(chalk.gray('  Then run: hey-ai mcp remove brave-search'));
+          console.log(chalk.gray('           hey-ai mcp add-preset brave-search -e BRAVE_API_KEY=your-key'));
         } else if (name === 'github') {
           console.log(chalk.yellow('\n⚠ Note: Requires GITHUB_TOKEN environment variable'));
           console.log(chalk.gray('  Create a token at: https://github.com/settings/tokens'));
@@ -428,10 +428,10 @@ _ask-ai "$@"
       if (transport === 'stdio') {
         if (!commandOrUrl) {
           console.error(chalk.red('Error: Command is required for stdio transport'));
-          console.log(chalk.gray('\nUsage: ask-ai mcp add <name> <command> [args...]'));
-          console.log(chalk.gray('Example: ask-ai mcp add filesystem npx -y @modelcontextprotocol/server-filesystem /path'));
+          console.log(chalk.gray('\nUsage: hey-ai mcp add <name> <command> [args...]'));
+          console.log(chalk.gray('Example: hey-ai mcp add filesystem npx -y @modelcontextprotocol/server-filesystem /path'));
           console.log(chalk.gray('\nWith env vars (use -- to separate options from command):'));
-          console.log(chalk.gray('  ask-ai mcp add myserver -e API_KEY=secret -- npx -y my-server'));
+          console.log(chalk.gray('  hey-ai mcp add myserver -e API_KEY=secret -- npx -y my-server'));
           process.exit(1);
         }
         
@@ -467,8 +467,8 @@ _ask-ai "$@"
       } else if (transport === 'http' || transport === 'sse') {
         if (!commandOrUrl) {
           console.error(chalk.red(`Error: URL is required for ${transport} transport`));
-          console.log(chalk.gray(`\nUsage: ask-ai mcp add -t ${transport} <name> <url>`));
-          console.log(chalk.gray(`Example: ask-ai mcp add -t ${transport} stripe https://mcp.stripe.com`));
+          console.log(chalk.gray(`\nUsage: hey-ai mcp add -t ${transport} <name> <url>`));
+          console.log(chalk.gray(`Example: hey-ai mcp add -t ${transport} stripe https://mcp.stripe.com`));
           process.exit(1);
         }
         
@@ -529,7 +529,7 @@ _ask-ai "$@"
         
       } catch (e) {
         console.error(chalk.red('Error: Invalid JSON'));
-        console.log(chalk.gray('Example: ask-ai mcp add-json myserver \'{"command":"npx","args":["-y","server"]}\''));
+        console.log(chalk.gray('Example: hey-ai mcp add-json myserver \'{"command":"npx","args":["-y","server"]}\''));
         process.exit(1);
       }
     });
@@ -546,7 +546,7 @@ _ask-ai "$@"
       
       if (serverNames.length === 0) {
         console.log(chalk.gray('No MCP servers configured.'));
-        console.log(chalk.gray('\nAdd one with: ask-ai mcp add <name> <command> [args...]'));
+        console.log(chalk.gray('\nAdd one with: hey-ai mcp add <name> <command> [args...]'));
         return;
       }
       
@@ -631,7 +631,7 @@ export const program = createProgram();
 
 const isMain = process.argv[1] && (
   process.argv[1].endsWith('index.ts') || 
-  process.argv[1].endsWith('ask-ai') ||
+  process.argv[1].endsWith('hey-ai') ||
   process.argv[1].endsWith('index.js')
 );
 
