@@ -22,6 +22,8 @@ jest.unstable_mockModule('../src/llm/wrapper.js', () => ({
     onToolStart: jest.fn(),
     onToolEnd: jest.fn(),
   }),
+  getRecommendedModels: jest.fn().mockReturnValue([]),
+  MODEL_ALIASES: {},
 }));
 
 jest.unstable_mockModule('../src/context/commands.js', () => ({
@@ -90,6 +92,17 @@ describe('CLI Arguments', () => {
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Thinking...'));
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Thinking...'));
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('✓ Command copied to clipboard!'));
+    consoleSpy.mockRestore();
+  });
+
+  it('should handle models command', async () => {
+    const { createProgram } = await import('../src/index.js');
+    const program = createProgram();
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    
+    await program.parseAsync(['node', 'hey-ai', 'models']);
+    
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Recommended Models:'));
     consoleSpy.mockRestore();
   });
 });

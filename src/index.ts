@@ -4,7 +4,7 @@ import clipboardy from 'clipboardy';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { RagEngine } from './rag/engine.js';
-import { LlmWrapper, createToolCallHandlers, McpToolDef } from './llm/wrapper.js';
+import { LlmWrapper, createToolCallHandlers, McpToolDef, getRecommendedModels } from './llm/wrapper.js';
 import { CommandDetector } from './context/commands.js';
 import { ConfigManager } from './config.js';
 
@@ -192,6 +192,31 @@ export function createProgram() {
         process.exit(1);
       }
     });
+  
+  program
+    .command('models')
+    .description('List available LLM models')
+    .action(() => {
+      const providers = getRecommendedModels();
+      console.log(chalk.bold('Recommended Models:\n'));
+      
+      for (const provider of providers) {
+        console.log(chalk.yellow.bold(provider.provider));
+        for (const model of provider.models) {
+          const aliasList = (model as any).aliases || [];
+          const aliasInfo = aliasList.length > 0 ? ` (${chalk.cyan(aliasList.join(', '))})` : '';
+          console.log(`  - ${chalk.green(model.id)}${aliasInfo}`);
+          if (model.description) {
+            console.log(`    ${chalk.gray(model.description)}`);
+          }
+        }
+        console.log();
+      }
+      
+      console.log(chalk.gray('Use a model with: '));
+      console.log(chalk.gray('  hey-ai -m <model-name> "your query"'));
+      console.log(chalk.gray('  hey-ai config set defaultModel <model-name>'));
+    });
 
   program
     .command('completion')
@@ -223,6 +248,7 @@ _hey-ai() {
         'completion:Generate zsh completion script'
         'config:Manage configuration'
         'mcp:Manage MCP servers'
+        'models:List available LLM models'
       )
       _describe -t subcommands 'subcommand' subcommands
       _message 'query'
@@ -296,6 +322,7 @@ _hey-ai "$@"
         console.log(`  ${chalk.cyan('defaultModel')}: ${config.defaultModel}`);
       } else {
         console.log(`  ${chalk.cyan('defaultModel')}: ${chalk.gray('(not set)')}`);
+        console.log(chalk.gray('    (Run "hey-ai models" to see available options)'));
       }
       
       const mcpCount = Object.keys(config.mcpServers || {}).length;

@@ -23,16 +23,17 @@ export interface LlmOptions {
 /**
  * Model aliases for user-friendly names
  */
-const MODEL_ALIASES: Record<string, string> = {
+export const MODEL_ALIASES: Record<string, string> = {
   // Claude aliases
   'claude-haiku': 'claude-3-5-haiku-20241022',
-  'claude-haiku-4.5': 'claude-3-5-haiku-20241022',
+  'claude-haiku-4.5': 'claude-4-5-haiku-20251015',
   'claude-3.5-haiku': 'claude-3-5-haiku-20241022',
   'claude-sonnet': 'claude-3-5-sonnet-20241022',
   'claude-sonnet-4': 'claude-sonnet-4-20250514',
   'claude-3.5-sonnet': 'claude-3-5-sonnet-20241022',
   'claude-opus': 'claude-3-opus-20240229',
-  'claude-opus-4.5': 'claude-3-opus-20240229',
+  'claude-opus-4.5': 'claude-4-5-opus-20251101',
+  'opus-4.5': 'claude-4-5-opus-20251101',
   'haiku': 'claude-3-5-haiku-20241022',
   'sonnet': 'claude-3-5-sonnet-20241022',
   'opus': 'claude-3-opus-20240229',
@@ -48,13 +49,66 @@ const MODEL_ALIASES: Record<string, string> = {
   'gpt4o': 'gpt-4o',
   'gpt4-mini': 'gpt-4o-mini',
   'gpt-4-mini': 'gpt-4o-mini',
+  'o1': 'o1-preview',
+  'o1-mini': 'o1-mini',
 };
 
 /**
  * Resolve model alias to full model name
  */
-function resolveModelAlias(modelName: string): string {
+export function resolveModelAlias(modelName: string): string {
   return MODEL_ALIASES[modelName.toLowerCase()] || modelName;
+}
+
+/**
+ * Get the list of all available models grouped by provider
+ */
+export function getRecommendedModels() {
+  // Group aliases by their resolved ID
+  const modelToAliases: Record<string, string[]> = {};
+  for (const [alias, id] of Object.entries(MODEL_ALIASES)) {
+    if (!modelToAliases[id]) modelToAliases[id] = [];
+    modelToAliases[id].push(alias);
+  }
+
+  // Predefined descriptions for known models
+  const descriptions: Record<string, string> = {
+    'claude-3-5-sonnet-20241022': 'Most capable model, great for coding',
+    'claude-3-5-haiku-20241022': 'Fast and efficient model',
+    'claude-3-opus-20240229': 'Powerful legacy model',
+    'claude-sonnet-4-20250514': 'Next-generation Sonnet model',
+    'claude-4-5-haiku-20251015': 'Ultra-fast Claude 4.5 Haiku',
+    'claude-4-5-opus-20251101': 'The frontier: Claude 4.5 Opus',
+    'gemini-2.0-flash': 'Next-gen fast model',
+    'gemini-1.5-pro': 'Highly capable model with large context',
+    'gemini-1.5-flash': 'Fast and cost-effective',
+    'gpt-4o': 'Most capable OpenAI model',
+    'gpt-4o-mini': 'Fast and affordable',
+    'o1-preview': 'Reasoning model for complex tasks',
+    'o1-mini': 'Fast reasoning model',
+  };
+
+  const providers = [
+    { name: 'Anthropic', prefix: ['claude', 'haiku', 'sonnet', 'opus'] },
+    { name: 'Google', prefix: ['gemini', 'google'] },
+    { name: 'OpenAI', prefix: ['gpt', 'o1', 'openai'] }
+  ];
+
+  return providers.map(p => {
+    const models = Object.keys(modelToAliases)
+      .filter(id => p.prefix.some(pre => id.toLowerCase().includes(pre)))
+      .map(id => ({
+        id,
+        aliases: modelToAliases[id].sort(),
+        description: descriptions[id]
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+
+    return {
+      provider: p.name,
+      models
+    };
+  });
 }
 
 /**
