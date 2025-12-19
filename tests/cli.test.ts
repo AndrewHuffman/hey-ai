@@ -1,0 +1,86 @@
+import { jest } from '@jest/globals';
+
+// Mock the dependencies before importing anything
+jest.unstable_mockModule('../src/rag/engine.js', () => ({
+  RagEngine: jest.fn().mockImplementation(() => ({
+    init: (jest.fn() as any).mockResolvedValue(undefined),
+    assembleContext: (jest.fn() as any).mockResolvedValue('mock context'),
+    saveInteraction: (jest.fn() as any).mockResolvedValue(undefined),
+  })),
+}));
+
+jest.unstable_mockModule('../src/llm/wrapper.js', () => ({
+  LlmWrapper: jest.fn().mockImplementation(() => ({
+    streamPrompt: (jest.fn() as any).mockResolvedValue('```zsh\nls -la\n```'),
+  })),
+}));
+
+jest.unstable_mockModule('../src/context/commands.js', () => ({
+  CommandDetector: jest.fn().mockImplementation(() => ({
+    getPreferences: jest.fn().mockReturnValue({}),
+  })),
+}));
+
+jest.unstable_mockModule('clipboardy', () => ({
+  default: {
+    write: (jest.fn() as any).mockResolvedValue(undefined),
+  },
+}));
+
+jest.unstable_mockModule('chalk', () => ({
+  default: {
+    gray: (s: any) => s,
+    blue: (s: any) => s,
+    green: (s: any) => s,
+    red: (s: any) => s,
+    bold: (s: any) => s,
+  },
+}));
+
+describe('CLI Arguments', () => {
+  it('should handle --show-prefs', async () => {
+    const { createProgram } = await import('../src/index.js');
+    const program = createProgram();
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    
+    await program.parseAsync(['node', 'llm-cli', '--show-prefs']);
+    
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Detected command preferences:'));
+    consoleSpy.mockRestore();
+  });
+
+  it('should handle --show-context', async () => {
+    const { createProgram } = await import('../src/index.js');
+    const program = createProgram();
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    
+    await program.parseAsync(['node', 'llm-cli', '--show-context']);
+    
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('=== Assembled Context ==='));
+    consoleSpy.mockRestore();
+  });
+
+  it('should handle query with --no-context', async () => {
+    const { createProgram } = await import('../src/index.js');
+    const program = createProgram();
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    
+    await program.parseAsync(['node', 'llm-cli', 'test query', '--no-context']);
+    
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Thinking...'));
+    consoleSpy.mockRestore();
+  });
+
+  it('should handle full query with context', async () => {
+    const { createProgram } = await import('../src/index.js');
+    const program = createProgram();
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    
+    await program.parseAsync(['node', 'llm-cli', 'list my files']);
+    
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Gathering context...'));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Thinking...'));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('✓ Command copied to clipboard!'));
+    consoleSpy.mockRestore();
+  });
+});
