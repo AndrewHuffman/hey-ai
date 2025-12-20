@@ -44,8 +44,8 @@ export class SessionHistory {
     } catch (e) {
       if (process.platform === 'linux' && e instanceof Error && e.message.includes('.so')) {
         // Fallback for Linux: load manually and strip .so if it exists
-        const vectorPath = (sqliteVss as any).getVector0Path?.().replace(/\.so$/, '');
-        const vssPath = (sqliteVss as any).getVss0Path?.().replace(/\.so$/, '');
+        const vectorPath = (sqliteVss as any).getVectorLoadablePath?.().replace(/\.so$/, '');
+        const vssPath = (sqliteVss as any).getVssLoadablePath?.().replace(/\.so$/, '');
         
         if (vectorPath && vssPath) {
           this.db.loadExtension(vectorPath);
