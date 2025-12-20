@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
 import * as sqliteVss from 'sqlite-vss';
-import { getEmbedding, getEmbeddingDimension, cosineSimilarity } from '../llm/embedding.js';
+import { getEmbedding, getEmbeddingDimension } from '../llm/embedding.js';
 
 export interface SessionEntry {
   id: number;
@@ -181,14 +181,14 @@ export class SessionHistory {
         FROM (
           SELECT rowid, distance
           FROM history_vss
-          WHERE vss_search(embedding, vss_search_params(?, ${limit}))
+          WHERE vss_search(embedding, vss_search_params(?, ?))
         ) AS vss
         JOIN history_embeddings he ON he.vss_rowid = vss.rowid
         JOIN history h ON h.id = he.history_id
         ORDER BY vss.distance
       `);
       
-      const results = stmt.all(JSON.stringify(queryEmbedding)) as (SessionEntry & { score: number })[];
+      const results = stmt.all(JSON.stringify(queryEmbedding), limit) as (SessionEntry & { score: number })[];
       return results.map(r => ({ ...r, source: 'semantic' as const }));
     } catch (error) {
       // Gracefully handle errors - FTS search will still work
@@ -226,8 +226,8 @@ export class SessionHistory {
       const normalizedScore = 1 - (r.score / maxSemanticScore);
       
       if (existing) {
-        // Boost items found by both methods
-        existing.score = (existing.score + normalizedScore) / 2 + 0.2;
+        // Boost items found by both methods, capping score at 1.0
+        existing.score = Math.min(1.0, (existing.score + normalizedScore) / 2 + 0.2);
       } else {
         resultMap.set(r.id, { ...r, score: normalizedScore, source: 'hybrid' });
       }
