@@ -216,7 +216,9 @@ export function createProgram() {
           if (!isRagInitialized) await rag.init();
           await processQuery(query, options, rag, llm, log);
           await rag.mcp.disconnectAll();
-          process.exit(0);  // Ensure clean exit
+          if (process.env.NODE_ENV !== 'test') {
+            process.exit(0);  // Ensure clean exit
+          }
         }
       } catch (error) {
         log('Action error:', error);
