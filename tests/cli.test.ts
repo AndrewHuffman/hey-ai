@@ -26,6 +26,11 @@ jest.unstable_mockModule('../src/llm/wrapper.js', () => ({
   MODEL_ALIASES: {},
 }));
 
+jest.unstable_mockModule('../src/llm/embedding.js', () => ({
+  getEmbedding: (jest.fn() as any).mockResolvedValue(Array(1536).fill(0.1)),
+  getEmbeddingDimension: (jest.fn() as any).mockReturnValue(1536),
+}));
+
 jest.unstable_mockModule('../src/context/commands.js', () => ({
   CommandDetector: jest.fn().mockImplementation(() => ({
     getPreferences: jest.fn().mockReturnValue({}),
@@ -65,7 +70,7 @@ describe('CLI Arguments', () => {
     const program = createProgram();
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     
-    await program.parseAsync(['node', 'hey-ai', '--show-context']);
+    await program.parseAsync(['node', 'hey-ai', '--show-context', 'test query']);
     
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('=== Assembled Context ==='));
     consoleSpy.mockRestore();
