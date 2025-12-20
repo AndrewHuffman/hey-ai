@@ -36,7 +36,27 @@ export class SessionHistory {
 
   private init() {
     // Load sqlite-vss extension
-    sqliteVss.load(this.db);
+    // On Linux, better-sqlite3 often appends .so to the end of the path.
+    // sqlite-vss provides paths that already include .so, leading to .so.so errors.
+    try {
+      // Use the built-in load function first
+      sqliteVss.load(this.db);
+    } catch (e) {
+      if (process.platform === 'linux' && e instanceof Error && e.message.includes('.so')) {
+        // Fallback for Linux: load manually and strip .so if it exists
+        const vectorPath = (sqliteVss as any).getVector0Path?.().replace(/\.so$/, '');
+        const vssPath = (sqliteVss as any).getVss0Path?.().replace(/\.so$/, '');
+        
+        if (vectorPath && vssPath) {
+          this.db.loadExtension(vectorPath);
+          this.db.loadExtension(vssPath);
+        } else {
+          throw e;
+        }
+      } else {
+        throw e;
+      }
+    }
 
     // Main history table
     this.db.exec(`
