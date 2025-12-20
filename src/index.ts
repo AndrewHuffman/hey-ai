@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import os from 'node:os';
 import clipboardy from 'clipboardy';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
@@ -36,19 +37,47 @@ async function processQuery(query: string, options: any, rag: RagEngine, llm: Ll
       (name) => rag.mcp.getServerForTool(name)
     );
 
+    const currentOs = `${os.type()} ${os.release()} (${os.platform()})`;
     const systemPrompt = options.system || 
-`You are a helpful CLI assistant with access to MCP tools.
+`You are a skilled Developer Assistant CLI tool running on **${currentOs}**. Your role is to provide the user with precise, executable CLI commands and functions to solve their problems.
 
-## Tool Usage Guidelines
-- Use your available tools when the user's request requires external data (reading files, fetching URLs, etc.)
-- If you find that a file reading or external action is needed, use the appropriate tool
-- If a tool fails, explain the error and suggest alternatives
-- For simple questions about commands, answer directly without tools
+## Core Responsibilities
+- **Provider, Not Agent:** Do not "do" the task (unless asked deeply). Your primary job is to provide the *commands* for the user to execute.
+- **Accuracy First:** Use your MCP tools (file restrictions, command search, etc.) to ensure your suggestions are valid and safe for the user's specific context.
+- **Context Aware:** Analyze the files and environment to tailor your specific command flags and arguments.
+- **Platform Specifics:** ALWAYS use the appropriate commands, flags, and arguments for **${currentOs}**. For example, use \`pbcopy\` on macOS, or BSD-style flags where appropriate.
 
-## Response Format
-- Be concise and action-oriented
-- Provide executable zsh commands in markdown code blocks
-- When showing file contents, format them appropriately`;
+## Tool Usage Guidelines // strict conformance required
+- **Understand Purpose:** Analyze the tool's description to understand exactly what it does before using it.
+- **Check Applicability:** Verify that the tool is strictly relevant to the user's specific request.
+- **Appropriate Usage:** Use available tools ONLY when the user's request explicitly requires external data (reading files, fetching URLs, etc.).
+- **Error Handling:** If a tool fails, explain the error clearly to the user and suggest alternatives.
+- **Direct Answers:** For simple questions about specific commands or syntax, answer directly without invoking tools.
+
+## Output Format
+## Output Format
+- **Single Block ONLY:** Provide ONE markdown code block containing the solution.
+- **NO Text Outside Block:** Do NOT include introductions, conclusions, explanations, or lists outside the code block.
+- **Parameterized Functions:** Wrap complex logic in functions.
+- **Explanation via Echo:** Use \`echo\` for explanations inside the code.
+- **No Inline Comments:** Do NOT use inline comments.
+- **Multiple Options:** Define separate functions within the **same single code block**.
+- **Usage Examples:** usage examples must be commented out inside the code block.
+
+## Example
+\`\`\`zsh
+# Define the function
+find_and_delete() {
+  local pattern=$1
+  echo "Finding files matching $pattern..."
+  find . -name "$pattern" -delete
+  echo "Done."
+}
+
+# Usage:
+# find_and_delete "*.tmp"
+\`\`\`
+`;
 
     const finalPrompt = context 
       ? `${context}\n\n## User Query\n${query}`
@@ -79,9 +108,10 @@ async function processQuery(query: string, options: any, rag: RagEngine, llm: Ll
     }
 
     if (commands.length > 0) {
-      const lastCommand = commands[commands.length - 1];
+      // Use the first code block as it's typically the primary solution
+      const commandToCopy = commands[0]; 
       try {
-        await clipboardy.write(lastCommand);
+        await clipboardy.write(commandToCopy);
         console.log(chalk.green('\n✓ Command copied to clipboard!'));
       } catch (e) {
         log('Clipboard error:', e);
