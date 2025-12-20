@@ -169,8 +169,9 @@ export class RagEngine {
       }
     }
     
-    // Very short queries are often follow-ups
-    if (query.trim().split(/\s+/).length <= 3) {
+    // Very short queries (1-2 words) are often follow-ups
+    const wordCount = query.trim().split(/\s+/).filter(Boolean).length;
+    if (wordCount > 0 && wordCount <= 2) {
       return true;
     }
     
@@ -205,7 +206,10 @@ export class RagEngine {
     }
 
     // 3. ZSH History - only if query seems terminal-related
-    const terminalKeywords = ['run', 'command', 'terminal', 'shell', 'execute', 'sudo', 'history'];
+    const terminalKeywords = [
+      'run', 'command', 'terminal', 'shell', 'execute', 'sudo', 'history',
+      'command history', 'shell history', 'terminal history'
+    ];
     const isTerminalQuery = terminalKeywords.some(kw => query.toLowerCase().includes(kw)) 
       || mentionedCommands.length > 0;
     
@@ -219,7 +223,10 @@ export class RagEngine {
 
     // 4. Session History - HEURISTIC: only if query seems like follow-up
     if (this.shouldIncludeHistory(query)) {
-      // Use hybrid search for better relevance
+      // Use hybrid search over session history:
+      // - Combines fast keyword/FTS5 matching with semantic similarity search.
+      // - This allows retrieving both exact term matches and related concepts (semantic).
+      // - Results from both methods are merged, de-duplicated, and ranked.
       const relevantSession = await this.session.searchHybrid(query, 3);
       const lastTurn = this.session.getRecentEntries(1);
       
@@ -238,8 +245,15 @@ export class RagEngine {
     }
 
     // 5. File Context - only if query seems file-related
-    const fileKeywords = ['file', 'read', 'open', 'edit', 'create', 'delete', 'list', 'directory', 'folder', 'path'];
-    const isFileQuery = fileKeywords.some(kw => query.toLowerCase().includes(kw));
+    const fileKeywords = [
+      'file', 'files', 'filename', 'filepath', 'directory', 'folder', 'path',
+      'list files', 'list directory', 'list folders'
+    ];
+    const lowerQuery = query.toLowerCase();
+    const mentionsFileConcept = fileKeywords.some(kw => lowerQuery.includes(kw));
+    // Detect explicit paths or filenames (with / or \)
+    const mentionsPathLike = lowerQuery.includes('/') || lowerQuery.includes('\\');
+    const isFileQuery = mentionsFileConcept || mentionsPathLike;
     
     if (isFileQuery) {
       const fileList = await this.files.listFiles(20);

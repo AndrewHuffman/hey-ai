@@ -35,8 +35,13 @@ export async function getEmbeddings(
  */
 function getEmbeddingModel(provider: EmbeddingProvider) {
   if (provider === 'openai') {
-    const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    return openai.textEmbeddingModel('text-embedding-3-small');
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY environment variable is not set');
+    }
+    const openai = createOpenAI({ apiKey });
+    const model = openai.embedding('text-embedding-3-small');
+    return model;
   }
   
   // Default to Gemini (free tier available)

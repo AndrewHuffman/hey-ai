@@ -168,11 +168,11 @@ export function createProgram() {
         }
 
         // Show context mode - show context then continue to LLM
-        let ragInitialized = false;
+        let isRagInitialized = false;
         if (options.showContext) {
           console.log(chalk.gray('Gathering context...'));
           await rag.init();
-          ragInitialized = true;
+          isRagInitialized = true;
           const context = await rag.assembleContext(query || '');
           console.log(chalk.bold('\n=== Assembled Context ===\n'));
           console.log(context || '(no context)');
@@ -190,7 +190,7 @@ export function createProgram() {
           } else {
             // Interactive mode
             console.log(chalk.cyan.bold('Entering interactive mode. Type "exit" or "quit" to leave.'));
-            if (!ragInitialized) await rag.init();
+            if (!isRagInitialized) await rag.init();
             
             while (true) {
               const { input } = await inquirer.prompt([{
@@ -213,7 +213,7 @@ export function createProgram() {
         }
 
         if (query) {
-          if (!ragInitialized) await rag.init();
+          if (!isRagInitialized) await rag.init();
           await processQuery(query, options, rag, llm, log);
           await rag.mcp.disconnectAll();
           process.exit(0);  // Ensure clean exit

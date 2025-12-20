@@ -14,11 +14,7 @@
 
 ### Context Retrieval & Usage Improvements
 
-- [ ] It should use context when applicable, but it shouldn't assume something in the context is always relevant.
-- [ ] For instance, if I ask it to help me write an `fd` command, and then I follow up later asking it to help me convert an gif to video, it shouldn't take into account the `fd` context.
 - [ ] Arguably, the agent should use a tool call (can be internal) to ask for the context, and then use that context to provide a more accurate response. I think we have to balance, what is likely needed for most tasks against what can be retrieved when needed.
-- [ ] For instance, if I ask it to use fd to find something, it doesn't really need to know other commands or even history unless my query appears to be a follow up to a previous command.
-- [ ] Relatedly, we should use RAG and semantic search to narrow down the context to the most relevant content. This would allow us to have available, for instance, all possible commands/path binaries available on the system (ideally with descriptions of what they do), but only retrieve those that are most relevant to the query.
 
 ### Best Practices
 
@@ -37,6 +33,10 @@
 
 ## Refinements
 
+- [x] **Context Retrieval & Usage Improvements:** (Commit: 456b736)
+  - [x] Use context selectively only when applicable (heuristic triggers).
+  - [x] Implement RAG and semantic search (FTS5 + sqlite-vss) to narrow down context.
+  - [x] Avoid irrelevant context carry-over from previous turns.
 - [x] **System Prompt Improvements:**
   - [x] Its role is to provide the developer with CLI commands and functions.
   - [x] It is not to complete the task for the developer. It is to provide the developer with the tools to complete the task.
