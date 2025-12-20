@@ -1,3 +1,22 @@
+# [0.5.0](https://github.com/AndrewHuffman/hey-ai/compare/v0.4.1...v0.5.0) (2025-12-20)
+
+
+### Bug Fixes
+
+* add isolatedModules to tsconfig.json to resolve ts-jest warning ([46c2955](https://github.com/AndrewHuffman/hey-ai/commit/46c2955b89e49cf7d5f2a23f1839a29ecd32b33c))
+* address PR review feedback - security, heuristics, and naming refinements ([6c6f962](https://github.com/AndrewHuffman/hey-ai/commit/6c6f962c1ae28fa45faa1c453d8226e0463e7d85))
+* **ci:** added libblas3 and liblapack3 dependencies ([c857af7](https://github.com/AndrewHuffman/hey-ai/commit/c857af7e04507a10eff5c1c1c065ee6c4a28f755))
+* **ci:** corrected resilient loading fallback and added libsqlite3-dev ([dfb0d27](https://github.com/AndrewHuffman/hey-ai/commit/dfb0d27f1fb5e8e209710c5e46f35c9528bfd99e))
+* resolve CI failures by fixing test process exit and CI environment ([377f221](https://github.com/AndrewHuffman/hey-ai/commit/377f221c16fac632ac96d7b6a17fd91a070f0bd8))
+* **session:** implement resilient sqlite-vss loading for Linux ([d573547](https://github.com/AndrewHuffman/hey-ai/commit/d573547c03e72c6a794cd5641f1a35cb48553a93))
+
+
+### Features
+
+* implement hybrid context retrieval with FTS5 and sqlite-vss ([53f9b6a](https://github.com/AndrewHuffman/hey-ai/commit/53f9b6a3cfcadf3e42b21102da9ee9bf22bfece0))
+
+
+
 ## [0.4.1](https://github.com/AndrewHuffman/hey-ai/compare/v0.4.0...v0.4.1) (2025-12-20)
 
 

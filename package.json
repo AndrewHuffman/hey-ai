@@ -1,6 +1,6 @@
 {
   "name": "hey-ai",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "AI-powered CLI for quick terminal questions - gathers context and suggests commands",
   "type": "module",
   "main": "dist/index.js",
