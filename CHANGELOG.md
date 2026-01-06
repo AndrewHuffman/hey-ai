@@ -1,3 +1,13 @@
+# [0.6.0](https://github.com/AndrewHuffman/hey-ai/compare/v0.5.0...v0.6.0) (2026-01-06)
+
+
+### Features
+
+* enhance command documentation retrieval with caching and improved fetch methods ([102bd3a](https://github.com/AndrewHuffman/hey-ai/commit/102bd3a9f06c7c5dcf1cd5f11eea527a41aec956))
+* implement internal tools for context retrieval, update system prompt guidance & tool call feedback ([a7990c3](https://github.com/AndrewHuffman/hey-ai/commit/a7990c33121635d0725aef8db696959e36ce2d64))
+
+
+
 # [0.5.0](https://github.com/AndrewHuffman/hey-ai/compare/v0.4.1...v0.5.0) (2025-12-20)
 
 
