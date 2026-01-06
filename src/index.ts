@@ -69,7 +69,7 @@ You have access to internal tools for gathering context ON DEMAND. Use these ONL
 - **get_recent_commands**: Get recent terminal commands. Use when discussing terminal history, debugging command issues, or user asks "what did I just run".
 - **list_project_files**: List project files. Use when user asks about project structure, "what files", or needs file context.
 - **read_file_content**: Read a specific file. Use when you need to examine code/config to give accurate advice.
-- **get_command_docs**: Get tldr/man docs for a command. Use when explaining unfamiliar commands or verifying syntax.
+- **get_command_docs**: Get man/tldr docs for a command. Use when explaining unfamiliar commands or verifying syntax.
 
 **When to use context tools:**
 - User explicitly asks about history, files, or past interactions

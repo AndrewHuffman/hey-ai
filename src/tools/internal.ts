@@ -16,7 +16,7 @@ export interface InternalToolContext {
   session: SessionHistory;
   history: ZshHistory;
   files: FileContext;
-  getManPage: (command: string) => string | null;
+  getManPage: (command: string) => Promise<string | null>;
 }
 
 /**
@@ -257,11 +257,11 @@ const readFileContent: InternalTool = {
 
 /**
  * Tool: get_command_docs
- * Get documentation (tldr or man page) for a command
+ * Get documentation (man page or tldr) for a command
  */
 const getCommandDocs: InternalTool = {
   name: 'get_command_docs',
-  description: 'Get documentation for a CLI command (tries tldr first, then man page). Use when explaining commands, suggesting flags, or verifying command syntax.',
+  description: 'Get documentation for a CLI command (tries man page first, then tldr). Use when explaining commands, suggesting flags, or verifying command syntax.',
   parameters: {
     type: 'object',
     properties: {
@@ -276,7 +276,7 @@ const getCommandDocs: InternalTool = {
     try {
       const command = args.command as string;
 
-      const docs = context.getManPage(command);
+      const docs = await context.getManPage(command);
 
       if (!docs) {
         return {

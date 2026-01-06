@@ -50,9 +50,9 @@ export class RagEngine {
    * Get man/tldr page for a command (public for internal tools).
    * Uses caching with lookup order: cache -> man -> tldr
    */
-  getManPage(command: string): string | null {
-    // 1. Check cache first (instant)
-    const cached = this.docsCache.get(command);
+  async getManPage(command: string): Promise<string | null> {
+    // 1. Check cache first (fast async read)
+    const cached = await this.docsCache.get(command);
     if (cached) {
       return cached;
     }
@@ -61,7 +61,11 @@ export class RagEngine {
     const manResult = this.fetchManPage(command);
     if (manResult) {
       // Cache async, don't block
-      this.docsCache.set(command, manResult, 'man').catch(() => {});
+      this.docsCache.set(command, manResult, 'man').catch((error) => {
+        if (process.env.DEBUG) {
+          console.error('[docs-cache] Cache write error:', error);
+        }
+      });
       return manResult;
     }
 
@@ -69,7 +73,11 @@ export class RagEngine {
     const tldrResult = this.fetchTldrPage(command);
     if (tldrResult) {
       // Cache async, don't block
-      this.docsCache.set(command, tldrResult, 'tldr').catch(() => {});
+      this.docsCache.set(command, tldrResult, 'tldr').catch((error) => {
+        if (process.env.DEBUG) {
+          console.error('[docs-cache] Cache write error:', error);
+        }
+      });
       return tldrResult;
     }
 
