@@ -6,9 +6,13 @@ jest.unstable_mockModule('../src/rag/engine.js', () => ({
     init: (jest.fn() as any).mockResolvedValue(undefined),
     assembleContext: (jest.fn() as any).mockResolvedValue('mock context'),
     saveInteraction: (jest.fn() as any).mockResolvedValue(undefined),
+    getInternalTools: (jest.fn() as any).mockReturnValue([]),
+    isInternalTool: (jest.fn() as any).mockReturnValue(false),
+    executeInternalTool: (jest.fn() as any).mockResolvedValue({ success: true, content: '' }),
     mcp: {
       getToolDefinitionsForGemini: (jest.fn() as any).mockResolvedValue([]),
       getServerForTool: (jest.fn() as any).mockReturnValue(undefined),
+      callTool: (jest.fn() as any).mockResolvedValue({ content: [] }),
       disconnectAll: (jest.fn() as any).mockResolvedValue(undefined),
     },
   })),
