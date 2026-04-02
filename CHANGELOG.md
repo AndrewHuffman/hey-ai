@@ -1,3 +1,15 @@
+## [0.6.1](https://github.com/AndrewHuffman/hey-ai/compare/v0.6.0...v0.6.1) (2026-04-02)
+
+
+### Bug Fixes
+
+* address pr comments ([9575169](https://github.com/AndrewHuffman/hey-ai/commit/957516928add89f9a437a5e12b438cec3669ab72))
+* address second round of PR review comments ([aec4659](https://github.com/AndrewHuffman/hey-ai/commit/aec46599ab47f58422ca4189c554ebb2f37cb58e))
+* avoid top-level await in session test to fix CI ([cd33222](https://github.com/AndrewHuffman/hey-ai/commit/cd332225b2087f9c06132b4e90dc82666183a954))
+* gracefully handle missing/invalid embedding API keys ([00b5cca](https://github.com/AndrewHuffman/hey-ai/commit/00b5cca3a1ed02ae4dd29cf40b7ee075b352965e))
+
+
+
 # [0.6.0](https://github.com/AndrewHuffman/hey-ai/compare/v0.5.0...v0.6.0) (2026-01-06)
 
 
