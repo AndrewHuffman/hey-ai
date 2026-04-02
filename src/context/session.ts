@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
 import * as sqliteVss from 'sqlite-vss';
-import { getEmbedding, getEmbeddingDimension } from '../llm/embedding.js';
+import { getEmbedding, getEmbeddingDimension, getEmbeddingKeyName } from '../llm/embedding.js';
 
 export interface SessionEntry {
   id: number;
@@ -100,14 +100,30 @@ export class SessionHistory {
       END;
     `);
 
-    // Vector table for semantic search
+    // Vector table for semantic search — recreate if embedding dimension changed
+    const vssExists = this.db.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='history_vss'"
+    ).get();
+
+    if (vssExists) {
+      try {
+        const info = this.db.prepare('SELECT * FROM vss_info(history_vss)').all() as any[];
+        const currentDim = info?.[0]?.dimensions ?? info?.[0]?.dimension;
+        if (currentDim && Number(currentDim) !== this.embeddingDimension) {
+          this.db.exec('DROP TABLE history_vss');
+          this.db.exec('DELETE FROM history_embeddings');
+        }
+      } catch {
+        // vss_info not available — leave table as-is
+      }
+    }
+
     this.db.exec(`
       CREATE VIRTUAL TABLE IF NOT EXISTS history_vss USING vss0(
         embedding(${this.embeddingDimension})
       );
     `);
 
-    // Mapping table between history IDs and vector rowids
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS history_embeddings (
         history_id INTEGER PRIMARY KEY REFERENCES history(id) ON DELETE CASCADE,
@@ -124,25 +140,36 @@ export class SessionHistory {
     const result = stmt.run(prompt, response, Date.now(), cwd);
     const historyId = result.lastInsertRowid as number;
 
-    // Generate and store embedding asynchronously
     try {
       const text = `${prompt}\n${response}`;
       const embedding = await getEmbedding(text);
       
-      // Insert into VSS table
-      const vssStmt = this.db.prepare(
-        'INSERT INTO history_vss(rowid, embedding) VALUES (?, ?)'
-      );
-      vssStmt.run(historyId, JSON.stringify(embedding));
-      
-      // Map history ID to VSS rowid
-      const mapStmt = this.db.prepare(
-        'INSERT INTO history_embeddings (history_id, vss_rowid) VALUES (?, ?)'
-      );
-      mapStmt.run(historyId, historyId);
+      if (embedding) {
+        const vssStmt = this.db.prepare(
+          'INSERT INTO history_vss(rowid, embedding) VALUES (?, ?)'
+        );
+        vssStmt.run(historyId, JSON.stringify(embedding));
+        
+        const mapStmt = this.db.prepare(
+          'INSERT INTO history_embeddings (history_id, vss_rowid) VALUES (?, ?)'
+        );
+        mapStmt.run(historyId, historyId);
+      }
     } catch (error) {
-      // Embedding failures are non-fatal - keyword search still works
-      console.error('Failed to generate embedding:', error);
+      if (!process.env.HEY_AI_QUIET) {
+        const keyName = getEmbeddingKeyName();
+        if (keyName) {
+          console.warn(
+            `Warning: ${keyName} is set but appears to be invalid. Semantic search disabled. ` +
+            'Suppress this warning with HEY_AI_QUIET=1.'
+          );
+        } else {
+          console.warn(
+            'Warning: OPENAI_API_KEY is not set. Set it to enable semantic search. ' +
+            'Suppress this warning with HEY_AI_QUIET=1.'
+          );
+        }
+      }
     }
 
     return historyId;
@@ -194,7 +221,8 @@ export class SessionHistory {
       }
 
       const queryEmbedding = await getEmbedding(query);
-      
+      if (!queryEmbedding) return [];
+
       // VSS requires the limit (k) inside the vss_search function call
       const stmt = this.db.prepare(`
         SELECT h.*, vss.distance as score
