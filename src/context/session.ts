@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
 import * as sqliteVss from 'sqlite-vss';
-import { getEmbedding, getEmbeddingDimension, getEmbeddingKeyName } from '../llm/embedding.js';
+import { getEmbedding, getEmbeddingDimension } from '../llm/embedding.js';
 
 export interface SessionEntry {
   id: number;
@@ -106,15 +106,18 @@ export class SessionHistory {
     ).get();
 
     if (vssExists) {
+      let currentDim: number | undefined;
       try {
         const info = this.db.prepare('SELECT * FROM vss_info(history_vss)').all() as any[];
-        const currentDim = info?.[0]?.dimensions ?? info?.[0]?.dimension;
-        if (currentDim && Number(currentDim) !== this.embeddingDimension) {
-          this.db.exec('DROP TABLE history_vss');
-          this.db.exec('DELETE FROM history_embeddings');
-        }
+        const dimValue = info?.[0]?.dimensions ?? info?.[0]?.dimension;
+        if (dimValue != null) currentDim = Number(dimValue);
       } catch {
         // vss_info not available — leave table as-is
+      }
+
+      if (currentDim && currentDim !== this.embeddingDimension) {
+        this.db.exec('DROP TABLE history_vss');
+        this.db.exec('DELETE FROM history_embeddings');
       }
     }
 
@@ -157,18 +160,11 @@ export class SessionHistory {
       }
     } catch (error) {
       if (!process.env.HEY_AI_QUIET) {
-        const keyName = getEmbeddingKeyName();
-        if (keyName) {
-          console.warn(
-            `Warning: ${keyName} is set but appears to be invalid. Semantic search disabled. ` +
-            'Suppress this warning with HEY_AI_QUIET=1.'
-          );
-        } else {
-          console.warn(
-            'Warning: OPENAI_API_KEY is not set. Set it to enable semantic search. ' +
-            'Suppress this warning with HEY_AI_QUIET=1.'
-          );
-        }
+        const detail = error instanceof Error ? error.message : String(error);
+        console.warn(
+          `Warning: Failed to index embedding for semantic search: ${detail}. ` +
+          'Keyword search still works. Suppress with HEY_AI_QUIET=1.'
+        );
       }
     }
 

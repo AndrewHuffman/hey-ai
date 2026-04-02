@@ -33,6 +33,8 @@ jest.unstable_mockModule('../src/llm/wrapper.js', () => ({
 jest.unstable_mockModule('../src/llm/embedding.js', () => ({
   getEmbedding: (jest.fn() as any).mockResolvedValue(Array(1536).fill(0.1)),
   getEmbeddingDimension: (jest.fn() as any).mockReturnValue(1536),
+  isEmbeddingAvailable: (jest.fn() as any).mockReturnValue(true),
+  getEmbeddingKeyName: (jest.fn() as any).mockReturnValue('OPENAI_API_KEY'),
 }));
 
 jest.unstable_mockModule('../src/context/commands.js', () => ({
