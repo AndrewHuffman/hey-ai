@@ -108,7 +108,7 @@ export class SessionHistory {
     if (vssExists) {
       let currentDim: number | undefined;
       try {
-        const info = this.db.prepare('SELECT * FROM vss_info(history_vss)').all() as any[];
+        const info = this.db.prepare("SELECT * FROM vss_info('history_vss')").all() as any[];
         const dimValue = info?.[0]?.dimensions ?? info?.[0]?.dimension;
         if (dimValue != null) currentDim = Number(dimValue);
       } catch {
