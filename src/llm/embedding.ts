@@ -2,28 +2,63 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { embedMany, embed } from 'ai';
 
-export type EmbeddingProvider = 'gemini' | 'openai';
+export type EmbeddingProvider = 'openai' | 'gemini';
+
+let hasWarned = false;
+
+export function isEmbeddingAvailable(provider: EmbeddingProvider = 'openai'): boolean {
+  if (provider === 'openai') {
+    return !!process.env.OPENAI_API_KEY;
+  }
+  return !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
+}
+
+export function getEmbeddingKeyName(provider: EmbeddingProvider = 'openai'): string | null {
+  if (provider === 'openai') {
+    return process.env.OPENAI_API_KEY ? 'OPENAI_API_KEY' : null;
+  }
+  if (process.env.GEMINI_API_KEY) return 'GEMINI_API_KEY';
+  if (process.env.GOOGLE_API_KEY) return 'GOOGLE_API_KEY';
+  return null;
+}
+
+function warnIfUnavailable(provider: EmbeddingProvider): boolean {
+  if (isEmbeddingAvailable(provider)) return false;
+  if (!hasWarned && !process.env.HEY_AI_QUIET) {
+    const keyName = provider === 'openai' ? 'OPENAI_API_KEY' : 'GEMINI_API_KEY or GOOGLE_API_KEY';
+    console.warn(
+      `Warning: ${keyName} is not set. Set it to enable semantic search. ` +
+      'Suppress this warning with HEY_AI_QUIET=1.'
+    );
+    hasWarned = true;
+  }
+  return true;
+}
 
 /**
- * Get embeddings for a single text string
+ * Get embeddings for a single text string.
+ * Returns null if no API key is configured.
  */
 export async function getEmbedding(
   text: string,
-  provider: EmbeddingProvider = 'gemini'
-): Promise<number[]> {
+  provider: EmbeddingProvider = 'openai'
+): Promise<number[] | null> {
+  if (warnIfUnavailable(provider)) return null;
   const model = getEmbeddingModel(provider);
   const result = await embed({ model, value: text });
   return result.embedding;
 }
 
 /**
- * Get embeddings for multiple texts in batch
+ * Get embeddings for multiple texts in batch.
+ * Returns null if no API key is configured.
  */
 export async function getEmbeddings(
   texts: string[],
-  provider: EmbeddingProvider = 'gemini'
-): Promise<number[][]> {
+  provider: EmbeddingProvider = 'openai'
+): Promise<number[][] | null> {
   if (texts.length === 0) return [];
+  if (warnIfUnavailable(provider)) return null;
   
   const model = getEmbeddingModel(provider);
   const result = await embedMany({ model, values: texts });
@@ -76,8 +111,6 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 /**
  * Get embedding dimension for the provider
  */
-export function getEmbeddingDimension(provider: EmbeddingProvider = 'gemini'): number {
-  // Gemini text-embedding-004: 768 dimensions
-  // OpenAI text-embedding-3-small: 1536 dimensions
+export function getEmbeddingDimension(provider: EmbeddingProvider = 'openai'): number {
   return provider === 'openai' ? 1536 : 768;
 }
