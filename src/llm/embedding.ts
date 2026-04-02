@@ -36,6 +36,7 @@ export async function getEmbedding(text: string): Promise<number[] | null> {
 
 /**
  * Get embeddings for multiple texts in batch.
+ * Returns an empty array if texts is empty.
  * Returns null if no API key is configured.
  */
 export async function getEmbeddings(texts: string[]): Promise<number[][] | null> {
