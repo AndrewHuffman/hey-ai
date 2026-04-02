@@ -1,15 +1,21 @@
 import { jest } from '@jest/globals';
-
-// Mock embedding service
-jest.unstable_mockModule('../src/llm/embedding.js', () => ({
-  getEmbedding: (jest.fn() as any).mockResolvedValue(Array(1536).fill(0.1)),
-  getEmbeddingDimension: (jest.fn() as any).mockReturnValue(1536),
-}));
-
-const { SessionHistory } = await import('../src/context/session.js');
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
+
+jest.unstable_mockModule('../src/llm/embedding.js', () => ({
+  getEmbedding: (jest.fn() as any).mockResolvedValue(Array(1536).fill(0.1)),
+  getEmbeddings: (jest.fn() as any).mockResolvedValue([Array(1536).fill(0.1)]),
+  getEmbeddingDimension: (jest.fn() as any).mockReturnValue(1536),
+  isEmbeddingAvailable: (jest.fn() as any).mockReturnValue(true),
+  getEmbeddingKeyName: (jest.fn() as any).mockReturnValue('OPENAI_API_KEY'),
+}));
+
+let SessionHistory: any;
+
+beforeAll(async () => {
+  ({ SessionHistory } = await import('../src/context/session.js'));
+});
 
 describe('SessionHistory', () => {
   const testDbPath = path.join(os.tmpdir(), 'test-session.db');
@@ -18,7 +24,7 @@ describe('SessionHistory', () => {
     if (fs.existsSync(testDbPath)) {
       try {
         fs.unlinkSync(testDbPath);
-      } catch (e) {
+      } catch {
         // ignore
       }
     }
