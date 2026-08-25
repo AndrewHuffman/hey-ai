@@ -32,6 +32,9 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }} # Uses deploy key to bypass branch rules
 
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgomp1 libsqlite3-dev libblas3 liblapack3
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
