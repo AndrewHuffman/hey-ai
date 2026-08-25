@@ -402,7 +402,17 @@ adds stale output before packing, verifies every source runtime module and the
 internal tool modules in the inventory, rejects files outside the release
 allowlist, installs the tarball into a temporary prefix with an isolated npm
 cache/configuration, and runs the installed `--help`, `--version`, and `models`
-commands. An optional output path retains the verified tarball for release.
+commands. An optional output path retains the verified tarball for release. Its
+metadata parser accepts both npm 10's array output and npm 12's package-name map.
+
+The PR release preflight and release use the same composite actions to install
+Node, pnpm, npm, native libraries, and to perform versioning, changelog
+generation, artifact verification, and release preparation. The toolchain is
+pinned rather than upgraded implicitly: release uses Node 22.23.2, pnpm
+10.11.0, and npm 12.0.2. A separate CI job covers the minimum supported Node
+22.13.0 runtime with its compatible bundled npm. A PR performs an
+`npm publish --dry-run`; the main-branch workflow switches only that final
+preparation flag off before publishing the already-verified tarball.
 
 ```mermaid
 flowchart TB
@@ -419,25 +429,32 @@ flowchart TB
         InstallTar --> Commands["Run help, version, and models"]
     end
 
-    subgraph CI["CI: Node 22.13 and latest 22"]
-        InstallCI["frozen install"] --> BuildCI["clean build"]
-        BuildCI --> TestCI["verbose tests"]
-        TestCI --> AuditCI["production audit"]
-        AuditCI --> SmokeCI["package verification"]
-        SmokeCI --> GateCI["required PR Validation aggregate"]
+    Setup["Shared pinned setup action<br/>native libraries<br/>pnpm 10.11.0 / npm 12.0.2"]
+    Prepare["Shared prepare-release action<br/>version + changelog + verified tarball"]
+
+    subgraph CI["Required PR Validation"]
+        MinInstall["Node 22.13.0 compatibility install"] --> MinBuild["clean build + verbose tests"]
+        InstallCI["Node 22.23.2 release-toolchain install"] --> BuildCI["clean build + verbose tests"]
+        BuildCI --> AuditCI["production audit"]
+        AuditCI --> SmokeCI["shared release preparation"]
+        SmokeCI --> DryRun["npm publish --dry-run"]
+        MinBuild --> GateCI["required PR Validation aggregate"]
+        DryRun --> GateCI["required PR Validation aggregate"]
     end
 
     subgraph Release["Release workflow on main"]
         InstallRelease["frozen install"] --> BuildRelease["clean build"]
         BuildRelease --> TestRelease["verbose tests"]
         TestRelease --> AuditRelease["production audit"]
-        AuditRelease --> Version["bump package version"]
-        Version --> Change["update changelog"]
-        Change --> VerifyRelease["build and retain verified tarball"]
+        AuditRelease --> VerifyRelease["shared release preparation"]
         VerifyRelease --> Publish["npm publish exact tarball"]
         Publish --> Commit["commit, tag, and force-with-lease push"]
     end
 
+    Setup --> InstallCI
+    Setup --> InstallRelease
+    Prepare --> SmokeCI
+    Prepare --> VerifyRelease
     SmokeCI -. "runs" .-> Stale
     VerifyRelease -. "runs and retains" .-> Stale
 ```
