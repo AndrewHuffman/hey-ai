@@ -1,5 +1,5 @@
 function findJsonDocument(output) {
-  for (let index = 0; index < output.length; index += 1) {
+  for (let index = output.length - 1; index >= 0; index -= 1) {
     const character = output[index];
     if (character !== '[' && character !== '{') {
       continue;

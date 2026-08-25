@@ -1,7 +1,8 @@
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 async function loadArgumentParser(): Promise<(arguments_: string[]) => string | undefined> {
-  const moduleUrl = pathToFileURL('scripts/package-smoke-arguments.mjs').href;
+  const moduleUrl = pathToFileURL(path.resolve('scripts/package-smoke-arguments.mjs')).href;
   const module = await import(moduleUrl);
   return module.getRetainedTarballArgument;
 }
