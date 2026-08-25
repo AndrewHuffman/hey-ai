@@ -106,10 +106,13 @@ jobs:
           echo "$CHANGES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Build and verify release tarball
+        run: pnpm run test:package -- "$RUNNER_TEMP/hey-ai.tgz"
+
       # IMPORTANT: Publish to npm BEFORE pushing anything
       # If this fails, no commit/tag will be pushed
       - name: Publish to npm (Trusted Publishing)
-        run: npm publish --access public
+        run: npm publish "$RUNNER_TEMP/hey-ai.tgz" --access public
 
       # Only runs if npm publish succeeded
       - name: Commit and tag

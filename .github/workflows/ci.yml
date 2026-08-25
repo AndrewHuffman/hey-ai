@@ -35,7 +35,10 @@ jobs:
         run: pnpm run build
 
       - name: Test
-        run: pnpm test
+        run: pnpm test --runInBand --verbose
+
+      - name: Verify package artifact
+        run: pnpm run test:package
 
       - name: Lint
         run: |
