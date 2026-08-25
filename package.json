@@ -12,14 +12,14 @@
   ],
   "scripts": {
     "clean": "node scripts/clean.mjs",
-    "build": "pnpm run clean && tsc",
+    "build": "node scripts/clean.mjs && tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "audit:prod": "pnpm audit --prod --audit-level high",
     "test:package": "node scripts/package-smoke.mjs",
     "build:link": "npm run build && npm link",
-    "prepack": "pnpm run build",
+    "prepack": "npm run build",
     "prepare": "husky"
   },
   "engines": {
