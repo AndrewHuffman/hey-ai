@@ -1,4 +1,4 @@
-import { generateText, tool } from 'ai';
+import { generateText, isStepCount, tool, type ToolSet } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
@@ -122,7 +122,7 @@ function getModelFromName(modelName: string) {
   // OpenAI models
   if (lowerName.startsWith('gpt-') || lowerName.startsWith('o1') || lowerName.includes('openai')) {
     const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    return openai(resolvedName);
+    return openai.chat(resolvedName);
   }
   
   // Anthropic/Claude models
@@ -139,7 +139,7 @@ function getModelFromName(modelName: string) {
   
   // Default to OpenAI for unknown models (llm CLI convention)
   const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  return openai(resolvedName);
+  return openai.chat(resolvedName);
 }
 
 
@@ -201,7 +201,7 @@ export class LlmWrapper {
     const model = getModelFromName(modelName);
     
     // Convert MCP tools to Vercel AI SDK format using Zod
-    const aiTools: Record<string, any> = {};
+    const aiTools: ToolSet = {};
     
     if (options.tools && options.onToolCall) {
       for (const mcpTool of options.tools) {
@@ -215,8 +215,8 @@ export class LlmWrapper {
         
         aiTools[toolName] = tool({
           description: mcpTool.description,
-          parameters: zodSchemaObj,
-          execute: async (args: any) => {
+          inputSchema: zodSchemaObj,
+          execute: async (args) => {
             onToolStart?.(toolName);
             const startTime = Date.now();
             
@@ -231,16 +231,16 @@ export class LlmWrapper {
               return `Error: ${result.error}`;
             }
           }
-        } as any);
+        });
       }
     }
     
     const result = await generateText({
       model,
-      system: options.system,
+      instructions: options.system,
       prompt: input,
       tools: Object.keys(aiTools).length > 0 ? aiTools : undefined,
-      maxSteps: 10, // Allow up to 10 tool calls
+      stopWhen: isStepCount(10),
     });
     
     const responseText = result.text;

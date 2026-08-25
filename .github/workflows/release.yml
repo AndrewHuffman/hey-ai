@@ -54,6 +54,12 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: Test
+        run: pnpm test --runInBand --verbose
+
+      - name: Audit production dependencies
+        run: pnpm run audit:prod
+
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
