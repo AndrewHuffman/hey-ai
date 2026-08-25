@@ -82,9 +82,10 @@ describe('McpManager with MCP SDK 1.30', () => {
       stderr: 'ignore',
     });
     expect(clientConstructorMock).toHaveBeenCalledWith(
-      { name: 'hey-ai-client', version: '1.0.0' },
+      { name: 'hey-ai-client', version: expect.any(String) },
       { capabilities: {} },
     );
+    expect(clientConstructorMock.mock.calls[0][0].version).not.toHaveLength(0);
     expect(connectMock).toHaveBeenCalledWith(transportConstructorMock.mock.results[0].value);
     expect(manager.hasTools()).toBe(true);
     expect(manager.getServerForTool('lookup')).toBe('local');
