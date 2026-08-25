@@ -73,7 +73,7 @@ runs:
 
     - name: Build and verify release tarball
       shell: bash
-      run: pnpm run test:package -- "${{ inputs.tarball_path }}"
+      run: pnpm run test:package "${{ inputs.tarball_path }}"
 
     - name: Dry-run npm publication
       if: ${{ inputs.publish_dry_run == 'true' }}
