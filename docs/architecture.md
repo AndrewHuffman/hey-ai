@@ -128,8 +128,10 @@ internal and MCP tools are still available to the model.
 ## Query and tool-call lifecycle
 
 Generation uses AI SDK `generateText`, not streaming. `streamPrompt()` is a
-compatibility alias around the same non-streaming method, and `maxSteps: 10`
-caps the model/tool loop.
+compatibility alias around the same non-streaming method. The public `system`
+option is passed to the SDK as `instructions`, and `stopWhen: isStepCount(10)`
+bounds the model/tool loop. OpenAI models use the provider's explicit Chat
+Completions factory rather than its default Responses API factory.
 
 ```mermaid
 sequenceDiagram
@@ -165,7 +167,7 @@ sequenceDiagram
     CLI->>LLM: streamPrompt(prompt, system, tools)
     Note over LLM,SDK: Non-streaming compatibility alias
     LLM->>LLM: Resolve alias, model, and provider
-    LLM->>SDK: generateText(maxSteps = 10)
+    LLM->>SDK: generateText(instructions, stopWhen = isStepCount(10))
     SDK->>Chat: Generate response
     loop Zero or more tool steps
         Chat-->>SDK: Tool name and arguments
@@ -390,45 +392,59 @@ small subset of schema forms.
 
 ## Build, package, and release flow
 
-The repository compiles TypeScript directly into `dist/`. The build does not
-clean that directory first, so deleted source files can leave stale JavaScript
-behind. The current release workflow builds and publishes before committing its
-version and changelog changes; it does not run tests or a packed-artifact smoke
-test.
+The repository supports Node.js 22.13+ within Node 22. `pnpm run build` first
+removes the explicit `dist/` directory through a cross-platform Node script,
+then compiles TypeScript into a fresh output tree. `package.json.files` permits
+only `dist/`; npm also includes `package.json` and README automatically.
+
+`prepack` performs the same clean build. `pnpm run test:package` deliberately
+adds stale output before packing, verifies every source runtime module and the
+internal tool modules in the inventory, rejects files outside the release
+allowlist, installs the tarball into a temporary prefix with an isolated npm
+cache/configuration, and runs the installed `--help`, `--version`, and `models`
+commands. An optional output path retains the verified tarball for release.
 
 ```mermaid
 flowchart TB
-    Source["src/**/*.ts"] --> Build["pnpm run build<br/>tsc"]
+    Source["src/**/*.ts"] --> Clean["pnpm run clean<br/>remove only dist/"]
+    Clean --> Build["tsc"]
     Build --> Dist["dist/"]
-    Old["Previously generated files"] -. "not cleaned" .-> Dist
+    Allowlist["package.json.files<br/>dist only"] --> Pack["npm pack"]
+    Dist --> Pack
 
-    subgraph CI["CI workflow"]
-        InstallCI["pnpm install"] --> BuildCI["build"]
-        BuildCI --> TestCI["test"]
-        TestCI --> Lint["lint placeholder only"]
+    subgraph Smoke["Package verification"]
+        Stale["Create stale dist sentinel"] --> Pack
+        Pack --> Inventory["Check runtime inventory and exclusions"]
+        Inventory --> InstallTar["Install tarball in temporary prefix"]
+        InstallTar --> Commands["Run help, version, and models"]
+    end
+
+    subgraph CI["CI: Node 22.13 and latest 22"]
+        InstallCI["frozen install"] --> BuildCI["clean build"]
+        BuildCI --> TestCI["verbose tests"]
+        TestCI --> AuditCI["production audit"]
+        AuditCI --> SmokeCI["package verification"]
     end
 
     subgraph Release["Release workflow on main"]
-        InstallRelease["pnpm install"] --> BuildRelease["build"]
-        BuildRelease --> Version["bump package version"]
+        InstallRelease["frozen install"] --> BuildRelease["clean build"]
+        BuildRelease --> TestRelease["verbose tests"]
+        TestRelease --> AuditRelease["production audit"]
+        AuditRelease --> Version["bump package version"]
         Version --> Change["update changelog"]
-        Change --> Pack["npm publish"]
-        Pack --> Commit["commit, tag, and force-with-lease push"]
+        Change --> VerifyRelease["build and retain verified tarball"]
+        VerifyRelease --> Publish["npm publish exact tarball"]
+        Publish --> Commit["commit, tag, and force-with-lease push"]
     end
 
-    Dist --> Pack
-    Ignore[".npmignore rule: tools/"] -. "also excludes dist/tools/**" .-> Missing["Published package lacks required internal tools"]
-    Pack --> Missing
-    Local["Untracked local files and stale dist output"] -. "may enter tarball" .-> Pack
-    TestCI -. "release does not wait for or rerun" .-> Pack
-
-    classDef broken stroke:#d1242f,stroke-width:2px,stroke-dasharray:6 4;
-    class Missing,Pack broken;
+    SmokeCI -. "runs" .-> Stale
+    VerifyRelease -. "runs and retains" .-> Stale
 ```
 
-The missing `dist/tools/index.js` module makes the packed CLI fail at startup.
-Packaging and release remediation is therefore the first item in the
-[prioritized backlog](../TODO.md).
+These gates resolve the audit's artifact-completeness and production-advisory
+blockers. The release workflow still commits and force-pushes version/changelog
+changes after publication, and its generated release text still contains an
+obsolete prerequisite; those risks remain in the [prioritized backlog](../TODO.md).
 
 ## Current architectural constraints
 
