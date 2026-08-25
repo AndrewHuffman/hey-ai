@@ -1,0 +1,81 @@
+name: Prepare verified release
+description: Version, document, package, install-test, and optionally dry-run the exact npm artifact
+
+inputs:
+  release_type:
+    description: Release type (auto, patch, minor, or major)
+    required: false
+    default: auto
+  tarball_path:
+    description: Absolute output path for the verified release tarball
+    required: true
+  publish_dry_run:
+    description: Run npm publish in dry-run mode after package verification
+    required: false
+    default: "true"
+
+outputs:
+  new_version:
+    description: Version produced by npm version, including its v prefix
+    value: ${{ steps.bump.outputs.new_version }}
+  changelog:
+    description: Latest conventional-changelog entry
+    value: ${{ steps.changelog.outputs.changelog }}
+
+runs:
+  using: composite
+  steps:
+    - name: Determine version bump
+      id: version
+      shell: bash
+      env:
+        REQUESTED_RELEASE_TYPE: ${{ inputs.release_type }}
+      run: |
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+
+        if [ -z "$LAST_TAG" ]; then
+          COMMITS=$(git log --pretty=format:"%s" --no-merges)
+        else
+          COMMITS=$(git log "${LAST_TAG}..HEAD" --pretty=format:"%s" --no-merges)
+        fi
+
+        if [ -n "$REQUESTED_RELEASE_TYPE" ] && [ "$REQUESTED_RELEASE_TYPE" != "auto" ]; then
+          BUMP="$REQUESTED_RELEASE_TYPE"
+        elif grep -qE "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?!:" <<< "$COMMITS"; then
+          BUMP="major"
+        elif grep -qE "^feat(\(.+\))?:" <<< "$COMMITS"; then
+          BUMP="minor"
+        else
+          BUMP="patch"
+        fi
+
+        echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+        echo "Determined version bump: $BUMP"
+
+    - name: Bump version locally
+      id: bump
+      shell: bash
+      run: |
+        NEW_VERSION=$(npm version "${{ steps.version.outputs.bump }}" --no-git-tag-version)
+        echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+        echo "New version: $NEW_VERSION"
+
+    - name: Update changelog
+      id: changelog
+      shell: bash
+      run: |
+        pnpm exec conventional-changelog -p angular -i CHANGELOG.md -s -r 0
+        CHANGES=$(pnpm exec conventional-changelog -p angular -r 1)
+        DELIMITER="CHANGELOG_$(date +%s%N)"
+        echo "changelog<<$DELIMITER" >> "$GITHUB_OUTPUT"
+        echo "$CHANGES" >> "$GITHUB_OUTPUT"
+        echo "$DELIMITER" >> "$GITHUB_OUTPUT"
+
+    - name: Build and verify release tarball
+      shell: bash
+      run: pnpm run test:package -- "${{ inputs.tarball_path }}"
+
+    - name: Dry-run npm publication
+      if: ${{ inputs.publish_dry_run == 'true' }}
+      shell: bash
+      run: npm publish "${{ inputs.tarball_path }}" --access public --dry-run

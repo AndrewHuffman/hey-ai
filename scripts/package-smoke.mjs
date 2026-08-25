@@ -10,6 +10,8 @@ import {
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createIsolatedNpmEnvironment } from './npm-environment.mjs';
+import { parseNpmPackMetadata } from './npm-pack-metadata.mjs';
 
 const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptsDirectory, '..');
@@ -68,18 +70,11 @@ try {
   const userConfigPath = path.join(temporaryRoot, 'npmrc');
   const packDirectory = path.join(temporaryRoot, 'packed');
   const installDirectory = path.join(temporaryRoot, 'installed');
-  const childEnvironment = {
-    ...process.env,
-    HUSKY: '0',
-    NPM_CONFIG_CACHE: cacheDirectory,
-    NPM_CONFIG_USERCONFIG: userConfigPath,
-  };
-
-  for (const environmentName of Object.keys(childEnvironment)) {
-    if (/^npm_config_(before|min.release.age|verify.deps.before.run|_jsr.registry)$/i.test(environmentName)) {
-      delete childEnvironment[environmentName];
-    }
-  }
+  const childEnvironment = createIsolatedNpmEnvironment(
+    process.env,
+    cacheDirectory,
+    userConfigPath,
+  );
 
   await mkdir(packDirectory, { recursive: true });
   await writeFile(userConfigPath, '');
@@ -91,12 +86,10 @@ try {
     ['pack', '--json', '--pack-destination', packDirectory],
     { env: childEnvironment },
   );
-  const metadataStart = packResult.stdout.search(/\[\s*\{\s*"id"\s*:/);
-  assert(metadataStart >= 0, `Could not find npm pack metadata in output:\n${packResult.stdout}`);
-  const packMetadata = JSON.parse(packResult.stdout.slice(metadataStart));
-  assert(Array.isArray(packMetadata) && packMetadata.length === 1, 'npm pack returned unexpected metadata');
-
-  const packageRecord = packMetadata[0];
+  const packageRecord = parseNpmPackMetadata(packResult.stdout);
+  assert(packageRecord && typeof packageRecord === 'object', 'npm pack returned an invalid package record');
+  assert(Array.isArray(packageRecord.files), 'npm pack metadata did not include a file inventory');
+  assert(typeof packageRecord.filename === 'string', 'npm pack metadata did not include a filename');
   const inventory = packageRecord.files.map((file) => file.path).sort();
   const inventorySet = new Set(inventory);
   const expectedRuntimeModules = await listSourceModules(path.join(projectRoot, 'src'));
