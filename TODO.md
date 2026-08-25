@@ -15,18 +15,7 @@ Supporting evidence and reproduction notes are in the [August 2026 codebase audi
 
 ## P0 — Release and Dependency Safety
 
-### Packaging
-
-- [ ] **Repair the npm artifact:** Replace the broad `.npmignore` rules with a `package.json` `files` allowlist so required `dist/tools/**` modules are published and non-runtime files are excluded.
-- [ ] **Clean before compiling:** Add a safe clean-build step so deleted source modules cannot survive as stale files in `dist/`.
-- [ ] **Test the exact package:** Pack the project, extract or install the tarball in a clean temporary directory, and run `hey-ai --help`, `hey-ai --version`, and a non-network smoke command before publication.
-- [ ] **Harden package hygiene:** Ensure coverage output, globally ignored editor/agent settings, local configuration, tests, source, and maintainer-only workflows cannot enter the tarball.
-
-### Dependency Security
-
-- [ ] **Enforce a release advisory policy:** Block publication while a high-severity advisory remains in the shipped graph unless a documented reachability assessment explicitly accepts the residual risk.
-- [ ] **Remediate production advisories:** Upgrade patched MCP SDK, AI SDK/provider, globbing, and affected transitive dependencies; rerun `pnpm audit --prod` and document any accepted residual risk.
-- [ ] **Stage breaking upgrades:** Treat the AI SDK/provider major-version migration separately from patch/minor security upgrades and add compatibility tests for model selection, tool schemas, tool loops, and response handling.
+None.
 
 ## P1 — Correctness and Reliability
 
@@ -62,8 +51,6 @@ Supporting evidence and reproduction notes are in the [August 2026 codebase audi
 - [ ] **Initialize lazily:** Avoid constructing SQLite, sqlite-vss, MCP, and duplicate command detection for modes that do not need them.
 - [ ] **Make post-response persistence non-fatal:** Do not turn an already-rendered successful answer into exit 1 or prevent clipboard copying when history/database persistence fails; report the secondary failure appropriately.
 - [ ] **Add explicit disposal:** Close session databases and MCP clients on every success, empty-input, cancellation, and error path without relying on forced process exits.
-- [ ] **Set and test supported Node ranges:** Add a Node.js `engines` declaration for the compatible LTS ranges (at minimum Node 20.12+ on 20.x and Node 22.13+ on 22.x) and validate each range in CI before expanding support.
-- [ ] **Gate release on verification:** Run build, tests, dependency policy, clean package creation, and extracted-artifact smoke tests before `npm publish`; do not race the independent CI workflow.
 - [ ] **Make release Git operations safer:** Avoid force-pushing generated release commits and ensure tags/changelog/version changes cannot diverge after publication.
 - [ ] **Remove stale generated release notes:** Delete the obsolete Datasette `llm` CLI prerequisite.
 
@@ -134,6 +121,18 @@ Supporting evidence and reproduction notes are in the [August 2026 codebase audi
 ---
 
 # Completed
+
+## Release and Dependency Safety
+
+- [x] **Repair the npm artifact:** Replaced `.npmignore` with a `dist` package allowlist that includes the internal tool modules. (Commit: 1dc1f81)
+- [x] **Clean before compiling:** `pnpm run build` now removes `dist/` safely before invoking TypeScript. (Commit: 1dc1f81)
+- [x] **Test the exact package:** Added an isolated pack/install smoke test for help, version, and model listing. (Commit: 1dc1f81)
+- [x] **Harden package hygiene:** The package test rejects stale output and files outside the runtime allowlist. (Commit: 1dc1f81)
+- [x] **Enforce a release advisory policy:** CI and release now block on the production high-severity audit gate. (Commit: 7e9acd9)
+- [x] **Remediate production advisories:** Upgraded the AI, MCP, globbing, and affected transitive dependency graph to zero known production advisories at verification time. (Commit: 7e9acd9)
+- [x] **Stage breaking upgrades:** Migrated to AI SDK 7/provider 4 APIs with direct regression coverage for model selection, tool schemas, tool execution, stopping, response handling, and embeddings. (Commit: 7e9acd9)
+- [x] **Set and test the supported Node range:** Declared Node `^22.13.0` and added CI coverage for Node 22.13 and the latest Node 22 release; AI SDK 7 intentionally removes Node 20 support. (Commit: 7e9acd9)
+- [x] **Gate release on verification:** Release now runs build, tests, the production audit, clean package creation, and installed-artifact smoke checks, then publishes that exact verified tarball. (Commits: 1dc1f81, 7e9acd9)
 
 ## Bugs
 

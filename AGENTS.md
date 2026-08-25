@@ -10,7 +10,7 @@ cross-cutting behavior.
 `hey-ai` is a TypeScript CLI for terminal-oriented LLM interactions. It adds
 small amounts of local environment context to each query and exposes heavier
 context through internal AI tools. It supports Anthropic, OpenAI, and Google
-models through Vercel AI SDK and can call tools from configured MCP servers.
+models through Vercel AI SDK 7 and can call tools from configured MCP servers.
 
 The current design is on-demand rather than eager context injection:
 
@@ -27,9 +27,8 @@ working feature.
 
 ## Prerequisites
 
-- Node.js 20.12+ within Node 20.x or Node 22.13+ within Node 22.x. Those are the
-  practical LTS ranges shared by the current direct and native dependencies;
-  validate other majors in CI before declaring them supported.
+- Node.js 22.13+ within Node 22.x. AI SDK 7 intentionally drops Node 20, and CI
+  validates both Node 22.13 and the latest Node 22 release.
 - pnpm 10.
 - A provider key matching the selected chat model:
   `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GEMINI_API_KEY`/`GOOGLE_API_KEY`.
@@ -38,9 +37,6 @@ working feature.
 - Native build/runtime support for `better-sqlite3` and `sqlite-vss`. Linux CI
   installs SQLite, BLAS, LAPACK, and OpenMP system libraries.
 - zsh history is the only shell-history format currently parsed.
-
-Do not repeat the README's Node 18 claim in new documentation or support code;
-it is tracked as stale documentation.
 
 ## Development Commands
 
@@ -60,9 +56,9 @@ pnpm run start -- "how do I find large files?"
 pnpm run build:link
 ```
 
-The build invokes `tsc` without cleaning `dist/`. Deleted source files can leave
-stale compiled files behind. Do not assume every file under `dist/` corresponds
-to current source.
+The build removes `dist/` with `scripts/clean.mjs` before invoking `tsc`, so
+deleted source modules cannot survive as stale compiled output. `prepack` runs
+the same clean build.
 
 ### Test
 
@@ -75,6 +71,12 @@ NODE_OPTIONS=--experimental-vm-modules pnpm exec jest tests/session.test.ts --ru
 
 # Run in watch mode
 pnpm test --watch --verbose
+
+# Audit shipped dependencies for high-severity advisories
+pnpm run audit:prod
+
+# Pack, inspect, install, and execute the release artifact
+pnpm run test:package
 ```
 
 When exercising the full CLI, isolate its home/configuration paths so tests do
@@ -149,7 +151,10 @@ tool even if its schema overwrote the internal definition exposed to the AI SDK.
 - Model precedence is: CLI `--model` → configuration `defaultModel` →
   `LLM_MODEL` → `gpt-4o-mini`.
 - Adapts JSON Schema tool definitions to a limited Zod subset.
-- Calls AI SDK `generateText()` with `maxSteps: 10`.
+- Calls AI SDK `generateText()` with `instructions` and
+  `stopWhen: isStepCount(10)`.
+- Uses the explicit OpenAI Chat Completions factory so the AI SDK 7 migration
+  does not change OpenAI provider behavior to the default Responses API.
 - `streamPrompt()` is a backward-compatible alias around non-streaming
   generation. Responses are not streamed today.
 - Prints the complete response before returning it to the query orchestrator.
@@ -219,11 +224,15 @@ relevance percentages as reliable until those TODO items are fixed.
   assert selected console output.
 - Internal-tool tests mostly use mocked providers and validate registration,
   routing, formatting, and argument bounds.
-- There are no direct suites for `ConfigManager`, `McpManager`, `LlmWrapper`,
-  `RagEngine`, `CommandDocsCache`, real MCP transport behavior, package
-  contents, or release behavior.
+- Direct suites cover `LlmWrapper`, embeddings, and `McpManager` connection,
+  discovery, routing, calls, and cleanup with mocked transports. There are no
+  direct suites for `ConfigManager`, `RagEngine`, `CommandDocsCache`, or real
+  MCP transport behavior.
+- `test:package` checks the tarball inventory, installs the artifact in an
+  isolated temporary prefix, and executes its administrative commands.
 - Coverage does not collect from all source modules and has no threshold.
-- CI builds and tests on Linux/Node 20. Its lint step is only a placeholder.
+- CI builds, tests, audits, and verifies the package on Linux with Node 22.13
+  and the latest Node 22 release. Its lint step is only a placeholder.
 - Husky's pre-commit hook runs the TypeScript build only.
 
 Always add a regression test for a fixed defect. For CLI behavior, assert the
@@ -232,19 +241,22 @@ header.
 
 ## Package and Release Safety
 
-The current npm artifact is a release blocker:
+Production packaging is allowlisted and verified:
 
-- `.npmignore` contains `tools/`, which also removes required
-  `dist/tools/**` modules.
-- An extracted package fails at startup with `ERR_MODULE_NOT_FOUND`.
-- The build does not clean stale output.
-- Local untracked artifacts can be eligible for packaging.
-- The release workflow builds and publishes without running tests or an
-  extracted-package smoke test.
-- Generated release notes still mention the unrelated Datasette `llm` CLI.
+- `package.json.files` includes only `dist/`; npm adds package metadata and the
+  README automatically.
+- Every build and `prepack` removes `dist/` before compiling.
+- `test:package` proves stale output is cleaned, checks every runtime module and
+  rejects source, tests, docs, coverage, settings, and maintainer workflows.
+- The smoke test installs the tarball into a clean temporary prefix and runs
+  the installed help, version, and models commands.
+- CI and release block on verbose tests, the high-severity production audit,
+  and package verification. Release publishes the retained verified tarball,
+  not a repack of the working directory.
 
-Do not publish until the P0 packaging item in [TODO.md](TODO.md) is complete and
-the exact tarball has been installed and started in a clean temporary directory.
+Do not publish the working directory directly. Generate and publish the exact
+verified tarball. The release workflow's post-publication force-push and stale
+generated release-note prerequisite remain known risks.
 
 ## Important Conventions
 
@@ -271,7 +283,6 @@ The authoritative, prioritized list is [TODO.md](TODO.md); supporting evidence
 is in [docs/codebase-audit.md](docs/codebase-audit.md). High-impact limitations
 include:
 
-- Broken npm package contents and unresolved dependency advisories.
 - Configured-but-unusable HTTP/SSE MCP transports.
 - Ineffective context flags and a `--show-context` mode that still calls an LLM.
 - Hard-coded runtime version drift.
@@ -280,7 +291,7 @@ include:
 - MCP secret disclosure, tool-name collisions, partial schema/content support,
   and no human approval boundary for mutating tools.
 - Cross-provider semantic indexing and global cross-project history search.
-- Stale README setup, context, model, runtime, streaming, and MCP claims.
+- Stale README setup, context, model, streaming, and MCP claims.
 
 ## Git Workflow
 

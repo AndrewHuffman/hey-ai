@@ -43,7 +43,7 @@ hey-ai "how do I find all large files in this directory?"
 
 ## Prerequisites
 
-- **Node.js** 18+ 
+- **Node.js** 22.13+ within Node.js 22.x
 - **API Key**: One of `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GEMINI_API_KEY`.
 - **zsh**: Currently optimized for zsh history parsing
 

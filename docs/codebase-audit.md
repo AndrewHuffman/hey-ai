@@ -69,6 +69,26 @@ release blockers, the audit confirmed several user-visible contract failures,
 search correctness bugs, configuration recovery problems, and security/privacy
 gaps.
 
+## Post-audit remediation — August 25, 2026
+
+The verification baseline and findings above remain the historical record of
+the audited `v0.6.1` tree. The following changes were made afterward:
+
+- Commit `1dc1f81` replaced `.npmignore` with a `dist` allowlist, made every
+  build clean `dist/`, and added a tarball test that verifies all compiled
+  runtime modules, rejects stale and maintainer-only files, installs the
+  artifact in an isolated prefix, and runs the installed help, version, and
+  model-listing commands. CI and release use that test, and release publishes
+  the exact verified tarball.
+- Commit `7e9acd9` upgraded to AI SDK 7, provider packages 4.x, MCP SDK 1.30,
+  globby 16.2, and refreshed compatible production dependencies. It migrated
+  the tool-loop API while keeping OpenAI on Chat Completions and added direct
+  LLM wrapper, embedding, and mocked MCP transport regression suites.
+- Post-remediation verification passed 9 suites and 46 tests, produced a
+  complete 15-file runtime tarball, and reported no known production
+  vulnerabilities. The supported runtime is now Node.js 22.13+ within Node 22,
+  tested at the minimum and latest Node 22 releases in CI.
+
 ## P0 — Release blockers
 
 The release policy used by this audit treats a high-severity advisory in the
