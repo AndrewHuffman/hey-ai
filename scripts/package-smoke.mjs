@@ -61,13 +61,13 @@ function assert(condition, message) {
 }
 
 const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), 'hey-ai-package-smoke-'));
+const stalePath = path.join(projectRoot, ...staleModule.split('/'));
 
 try {
   const cacheDirectory = path.join(temporaryRoot, 'npm-cache');
   const userConfigPath = path.join(temporaryRoot, 'npmrc');
   const packDirectory = path.join(temporaryRoot, 'packed');
   const installDirectory = path.join(temporaryRoot, 'installed');
-  const stalePath = path.join(projectRoot, ...staleModule.split('/'));
   const childEnvironment = {
     ...process.env,
     HUSKY: '0',
@@ -183,5 +183,6 @@ try {
     console.log(`Retained verified tarball at ${retainedTarball}`);
   }
 } finally {
+  await rm(stalePath, { force: true });
   await rm(temporaryRoot, { recursive: true, force: true });
 }

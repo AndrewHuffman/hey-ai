@@ -424,6 +424,7 @@ flowchart TB
         BuildCI --> TestCI["verbose tests"]
         TestCI --> AuditCI["production audit"]
         AuditCI --> SmokeCI["package verification"]
+        SmokeCI --> GateCI["required PR Validation aggregate"]
     end
 
     subgraph Release["Release workflow on main"]

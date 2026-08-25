@@ -147,4 +147,24 @@ describe('LlmWrapper', () => {
     expect(onToolEnd).toHaveBeenCalledTimes(2);
     expect(onToolEnd).toHaveBeenCalledWith('failing_tool', false, expect.any(Number));
   });
+
+  it('converts thrown tool errors to model-visible failures and reports completion', async () => {
+    const onToolCall = (jest.fn() as any).mockRejectedValue(new Error('tool crashed'));
+    const onToolEnd = jest.fn();
+    const wrapper = new LlmWrapper();
+
+    await wrapper.prompt('use a tool', {
+      tools: [{
+        name: 'throwing_tool',
+        description: 'Throws an error',
+        parameters: { type: 'object', properties: {} },
+      }],
+      onToolCall,
+      onToolEnd,
+    });
+
+    const throwingTool = generateTextMock.mock.calls[0][0].tools.throwing_tool;
+    await expect(throwingTool.execute({})).resolves.toBe('Error: tool crashed');
+    expect(onToolEnd).toHaveBeenCalledWith('throwing_tool', false, expect.any(Number));
+  });
 });
