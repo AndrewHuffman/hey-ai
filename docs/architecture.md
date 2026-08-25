@@ -406,7 +406,7 @@ commands. An optional output path retains the verified tarball for release.
 
 ```mermaid
 flowchart TB
-    Source["src/**/*.ts"] --> Clean["pnpm run clean<br/>remove only dist/"]
+    Source["src/**/*.ts"] --> Clean["node scripts/clean.mjs<br/>remove only dist/"]
     Clean --> Build["tsc"]
     Build --> Dist["dist/"]
     Allowlist["package.json.files<br/>dist only"] --> Pack["npm pack"]

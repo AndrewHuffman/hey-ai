@@ -228,7 +228,7 @@ export class LlmWrapper {
             if (result.success) {
               return result.content;
             } else {
-              return `Error: ${result.error}`;
+              return `Error: ${result.error || result.content || 'Tool call failed'}`;
             }
           }
         });

@@ -124,12 +124,10 @@ describe('LlmWrapper', () => {
     expect(onToolEnd).toHaveBeenCalledWith('lookup', true, expect.any(Number));
   });
 
-  it('returns model-visible errors when tool execution reports failure', async () => {
-    const onToolCall = (jest.fn() as any).mockResolvedValue({
-      success: false,
-      content: '',
-      error: 'remote failure',
-    });
+  it('returns useful model-visible errors when tool execution reports failure', async () => {
+    const onToolCall = (jest.fn() as any)
+      .mockResolvedValueOnce({ success: false, content: 'remote failure' })
+      .mockResolvedValueOnce({ success: false, content: '' });
     const onToolEnd = jest.fn();
     const wrapper = new LlmWrapper();
 
@@ -145,6 +143,8 @@ describe('LlmWrapper', () => {
 
     const failingTool = generateTextMock.mock.calls[0][0].tools.failing_tool;
     await expect(failingTool.execute({})).resolves.toBe('Error: remote failure');
+    await expect(failingTool.execute({})).resolves.toBe('Error: Tool call failed');
+    expect(onToolEnd).toHaveBeenCalledTimes(2);
     expect(onToolEnd).toHaveBeenCalledWith('failing_tool', false, expect.any(Number));
   });
 });
