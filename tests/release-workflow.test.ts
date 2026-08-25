@@ -65,7 +65,7 @@ describe('release workflow prerequisites', () => {
 
     expect(prepareAction).toContain('npm version "${{ steps.version.outputs.bump }}" --no-git-tag-version');
     expect(prepareAction).toContain('conventional-changelog -p angular -i CHANGELOG.md -s -r 0');
-    expect(prepareAction).toContain('pnpm run test:package -- "${{ inputs.tarball_path }}"');
+    expect(prepareAction).toContain('pnpm run test:package "${{ inputs.tarball_path }}"');
     expect(prepareAction).toContain('npm publish "${{ inputs.tarball_path }}" --access public --dry-run');
     expect(releasePublish.block).toContain(
       'npm publish "${{ runner.temp }}/hey-ai.tgz" --access public',

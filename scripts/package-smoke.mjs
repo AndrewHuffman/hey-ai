@@ -12,10 +12,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createIsolatedNpmEnvironment } from './npm-environment.mjs';
 import { parseNpmPackMetadata } from './npm-pack-metadata.mjs';
+import { getRetainedTarballArgument } from './package-smoke-arguments.mjs';
 
 const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptsDirectory, '..');
-const retainedTarball = process.argv[2] ? path.resolve(process.argv[2]) : undefined;
+const retainedTarballArgument = getRetainedTarballArgument(process.argv.slice(2));
+const retainedTarball = retainedTarballArgument
+  ? path.resolve(retainedTarballArgument)
+  : undefined;
 const staleModule = 'dist/__stale_package_smoke__.js';
 
 function run(command, args, options = {}) {
