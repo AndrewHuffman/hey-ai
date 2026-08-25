@@ -219,16 +219,25 @@ export class LlmWrapper {
           execute: async (args) => {
             onToolStart?.(toolName);
             const startTime = Date.now();
-            
-            const result = await onToolCall(toolName, args as Record<string, unknown>);
-            
-            const duration = Date.now() - startTime;
-            onToolEnd?.(toolName, result.success, duration);
-            
-            if (result.success) {
-              return result.content;
-            } else {
+
+            let success = false;
+            try {
+              const result = await onToolCall(toolName, args as Record<string, unknown>);
+              success = result.success;
+
+              if (result.success) {
+                return result.content;
+              }
               return `Error: ${result.error || result.content || 'Tool call failed'}`;
+            } catch (error) {
+              const errorMessage = error instanceof Error && error.message
+                ? error.message
+                : typeof error === 'string' && error
+                  ? error
+                  : 'Tool call failed';
+              return `Error: ${errorMessage}`;
+            } finally {
+              onToolEnd?.(toolName, success, Date.now() - startTime);
             }
           }
         });

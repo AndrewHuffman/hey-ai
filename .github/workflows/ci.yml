@@ -52,3 +52,19 @@ jobs:
           # Add lint script to package.json later if needed
           # pnpm run lint
           echo "No lint script defined yet"
+
+  validation:
+    name: PR Validation
+    if: ${{ always() }}
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Confirm validation matrix passed
+        env:
+          VALIDATION_MATRIX_RESULT: ${{ needs.build.result }}
+        run: |
+          if [ "$VALIDATION_MATRIX_RESULT" != "success" ]; then
+            echo "Validation matrix result: $VALIDATION_MATRIX_RESULT"
+            exit 1
+          fi
