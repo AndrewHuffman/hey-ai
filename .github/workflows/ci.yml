@@ -7,13 +7,9 @@ on:
     branches: [main, dev]
 
 jobs:
-  build:
-    name: PR Validation (Node ${{ matrix.node-version }})
+  minimum_runtime:
+    name: Runtime Compatibility (Node 22.13.0)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["22.13.0", "22.x"]
 
     steps:
       - uses: actions/checkout@v4
@@ -24,13 +20,35 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.11.0
 
-      - name: Set up Node.js
+      - name: Set up minimum Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: "pnpm"
+          node-version: "22.13.0"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Test
+        run: pnpm test --runInBand --verbose
+
+  release_preflight:
+    name: Release Preflight
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up release toolchain
+        uses: ./.github/actions/setup-release
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -44,8 +62,12 @@ jobs:
       - name: Audit production dependencies
         run: pnpm run audit:prod
 
-      - name: Verify package artifact
-        run: pnpm run test:package
+      - name: Prepare release candidate
+        uses: ./.github/actions/prepare-release
+        with:
+          release_type: auto
+          tarball_path: ${{ runner.temp }}/hey-ai.tgz
+          publish_dry_run: "true"
 
       - name: Lint
         run: |
@@ -56,15 +78,17 @@ jobs:
   validation:
     name: PR Validation
     if: ${{ always() }}
-    needs: build
+    needs: [minimum_runtime, release_preflight]
     runs-on: ubuntu-latest
 
     steps:
-      - name: Confirm validation matrix passed
+      - name: Confirm all validation jobs passed
         env:
-          VALIDATION_MATRIX_RESULT: ${{ needs.build.result }}
+          MINIMUM_RUNTIME_RESULT: ${{ needs.minimum_runtime.result }}
+          RELEASE_PREFLIGHT_RESULT: ${{ needs.release_preflight.result }}
         run: |
-          if [ "$VALIDATION_MATRIX_RESULT" != "success" ]; then
-            echo "Validation matrix result: $VALIDATION_MATRIX_RESULT"
+          if [ "$MINIMUM_RUNTIME_RESULT" != "success" ] || [ "$RELEASE_PREFLIGHT_RESULT" != "success" ]; then
+            echo "Minimum runtime result: $MINIMUM_RUNTIME_RESULT"
+            echo "Release preflight result: $RELEASE_PREFLIGHT_RESULT"
             exit 1
           fi

@@ -32,24 +32,8 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }} # Uses deploy key to bypass branch rules
 
-      - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y libgomp1 libsqlite3-dev libblas3 liblapack3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          registry-url: "https://registry.npmjs.org"
-
-      - name: Upgrade npm for Trusted Publishing
-        run: |
-          npm install -g npm@latest
-          echo "npm version: $(npm --version)"
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
+      - name: Set up release toolchain
+        uses: ./.github/actions/setup-release
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -68,81 +52,39 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Determine version bump
-        id: version
-        run: |
-          # Get commits since last tag
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-
-          if [ -z "$LAST_TAG" ]; then
-            COMMITS=$(git log --pretty=format:"%s" --no-merges)
-          else
-            COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"%s" --no-merges)
-          fi
-
-          # Determine bump type from conventional commits
-          RELEASE_TYPE="${{ inputs.release_type }}"
-          if [ -n "$RELEASE_TYPE" ] && [ "$RELEASE_TYPE" != "auto" ]; then
-            BUMP="$RELEASE_TYPE"
-          elif echo "$COMMITS" | grep -qE "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?!:"; then
-            BUMP="major"
-          elif echo "$COMMITS" | grep -qE "^feat(\(.+\))?:"; then
-            BUMP="minor"
-          else
-            BUMP="patch"
-          fi
-
-          echo "bump=$BUMP" >> $GITHUB_OUTPUT
-          echo "Determined version bump: $BUMP"
-
-      - name: Bump version (local only)
-        id: bump
-        run: |
-          # Bump version without creating git tag
-          NEW_VERSION=$(npm version ${{ steps.version.outputs.bump }} --no-git-tag-version)
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "New version: $NEW_VERSION"
-
-      - name: Update CHANGELOG.md
-        id: changelog
-        run: |
-          pnpm exec conventional-changelog -p angular -i CHANGELOG.md -s -r 0
-
-          # Get just the latest entry for the GitHub Release
-          CHANGES=$(pnpm exec conventional-changelog -p angular -r 1)
-
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Build and verify release tarball
-        run: pnpm run test:package -- "$RUNNER_TEMP/hey-ai.tgz"
+      - name: Prepare verified release
+        id: prepare
+        uses: ./.github/actions/prepare-release
+        with:
+          release_type: ${{ inputs.release_type || 'auto' }}
+          tarball_path: ${{ runner.temp }}/hey-ai.tgz
+          publish_dry_run: "false"
 
       # IMPORTANT: Publish to npm BEFORE pushing anything
       # If this fails, no commit/tag will be pushed
       - name: Publish to npm (Trusted Publishing)
-        run: npm publish "$RUNNER_TEMP/hey-ai.tgz" --access public
+        run: npm publish "${{ runner.temp }}/hey-ai.tgz" --access public
 
       # Only runs if npm publish succeeded
       - name: Commit and tag
         run: |
           git add package.json pnpm-lock.yaml CHANGELOG.md
-          git commit -m "chore(release): ${{ steps.bump.outputs.new_version }}" || echo "No changes to commit"
-          git tag ${{ steps.bump.outputs.new_version }}
+          git commit -m "chore(release): ${{ steps.prepare.outputs.new_version }}" || echo "No changes to commit"
+          git tag ${{ steps.prepare.outputs.new_version }}
 
       - name: Push changes
         run: |
           # SSH key is already configured by checkout step
           git fetch origin main
           git push --force-with-lease origin main
-          git push origin ${{ steps.bump.outputs.new_version }}
+          git push origin ${{ steps.prepare.outputs.new_version }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.bump.outputs.new_version }}
+          tag_name: ${{ steps.prepare.outputs.new_version }}
           body: |
-            ${{ steps.changelog.outputs.changelog }}
+            ${{ steps.prepare.outputs.changelog }}
 
             ## Install
 

@@ -1,0 +1,42 @@
+name: Set up release toolchain
+description: Install the pinned native and JavaScript toolchain shared by PR validation and release
+
+inputs:
+  node-version:
+    description: Exact release Node.js version to install
+    required: false
+    default: "22.23.2"
+
+runs:
+  using: composite
+  steps:
+    - name: Install system dependencies
+      shell: bash
+      run: sudo apt-get update && sudo apt-get install -y libgomp1 libsqlite3-dev libblas3 liblapack3
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 10.11.0
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
+        registry-url: https://registry.npmjs.org
+
+    - name: Install release npm
+      shell: bash
+      run: npm install --global npm@12.0.2
+
+    - name: Verify pinned toolchain
+      shell: bash
+      env:
+        EXPECTED_NODE_VERSION: ${{ inputs.node-version }}
+      run: |
+        test "$(node --version)" = "v${EXPECTED_NODE_VERSION}"
+        test "$(npm --version)" = "12.0.2"
+        test "$(pnpm --version)" = "10.11.0"
+        echo "node=$(node --version) npm=$(npm --version) pnpm=$(pnpm --version)"
