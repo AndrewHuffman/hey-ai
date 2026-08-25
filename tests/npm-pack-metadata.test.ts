@@ -1,7 +1,8 @@
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 async function loadParser(): Promise<(output: string) => Record<string, unknown>> {
-  const moduleUrl = pathToFileURL('scripts/npm-pack-metadata.mjs').href;
+  const moduleUrl = pathToFileURL(path.resolve('scripts/npm-pack-metadata.mjs')).href;
   const module = await import(moduleUrl);
   return module.parseNpmPackMetadata;
 }
@@ -24,7 +25,13 @@ describe('npm pack metadata parser', () => {
 
   it('parses the npm 12 package-name map after lifecycle output', async () => {
     const parseNpmPackMetadata = await loadParser();
-    const output = `Removed /tmp/dist\nHUSKY=0 skip install${JSON.stringify({ 'hey-ai': packageRecord }, null, 2)}\n`;
+    const output = [
+      'Removed /tmp/dist',
+      JSON.stringify({ lifecycle: { status: 'complete' } }),
+      'HUSKY=0 skip install',
+      JSON.stringify({ 'hey-ai': packageRecord }, null, 2),
+      '',
+    ].join('\n');
 
     expect(parseNpmPackMetadata(output)).toEqual(packageRecord);
   });

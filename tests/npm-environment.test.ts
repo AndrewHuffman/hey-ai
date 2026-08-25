@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 type EnvironmentFactory = (
@@ -7,7 +8,7 @@ type EnvironmentFactory = (
 ) => NodeJS.ProcessEnv;
 
 async function loadEnvironmentFactory(): Promise<EnvironmentFactory> {
-  const moduleUrl = pathToFileURL('scripts/npm-environment.mjs').href;
+  const moduleUrl = pathToFileURL(path.resolve('scripts/npm-environment.mjs')).href;
   const module = await import(moduleUrl);
   return module.createIsolatedNpmEnvironment;
 }
