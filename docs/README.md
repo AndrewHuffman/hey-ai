@@ -1,8 +1,9 @@
 # hey-ai Documentation
 
-These documents describe the current `v0.6.1` implementation. They are a
-memory aid for maintainers, not a promise that every depicted path is working
-as intended.
+The architecture guide describes the current implementation. The audit keeps
+its dated `v0.6.1` baseline and records later remediation and release incidents
+separately. These documents are a memory aid for maintainers, not a promise
+that every depicted path is working as intended.
 
 - [Architecture](./architecture.md) — components, query lifecycles, context
   retrieval, persistence, MCP, and release flows.

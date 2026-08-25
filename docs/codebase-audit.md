@@ -87,7 +87,15 @@ the audited `v0.6.1` tree. The following changes were made afterward:
 - Post-remediation verification passed 9 suites and 46 tests, produced a
   complete 15-file runtime tarball, and reported no known production
   vulnerabilities. The supported runtime is now Node.js 22.13+ within Node 22,
-  tested at the minimum and latest Node 22 releases in CI.
+  tested at the minimum runtime and the pinned release runtime in CI.
+- Release run
+  [32900023653](https://github.com/AndrewHuffman/hey-ai/actions/runs/32900023653/job/97971412783)
+  exposed a remaining CI/release mismatch: release installed `npm@latest`
+  (npm 12.0.2) while PR CI used npm 10.9.x. npm 12 changed `npm pack --json`
+  from an array to a package-name map, so the artifact verifier—not the valid
+  tarball—failed only after merge. The follow-up pins the shared toolchain,
+  accepts and tests both metadata formats, and makes PR CI run the same shared
+  version/changelog/package preparation plus `npm publish --dry-run`.
 
 ## P0 — Release blockers
 
@@ -97,7 +105,7 @@ assessment explicitly accepts the residual risk.
 
 | Finding | Evidence | Impact | Recommended outcome |
 | --- | --- | --- | --- |
-| Packed CLI omits required runtime modules | [`.npmignore`](../.npmignore) contains `tools/`, which also excludes `dist/tools/**`. `npm pack --dry-run` contained no `dist/tools/index.js` or `dist/tools/internal.js`; starting an extracted artifact raised `ERR_MODULE_NOT_FOUND` from `dist/rag/engine.js`. | A newly published package cannot start. | Replace the broad ignore rules with a `package.json` `files` allowlist, clean before build, and add an extract-and-run package smoke test before publishing. |
+| Packed CLI omits required runtime modules | The historical `.npmignore` (removed during remediation) contained `tools/`, which also excluded `dist/tools/**`. `npm pack --dry-run` contained no `dist/tools/index.js` or `dist/tools/internal.js`; starting an extracted artifact raised `ERR_MODULE_NOT_FOUND` from `dist/rag/engine.js`. | A newly published package cannot start. | Replace the broad ignore rules with a `package.json` `files` allowlist, clean before build, and add an extract-and-run package smoke test before publishing. |
 | Production dependency tree has known advisories | `pnpm audit --prod` reported 60 advisories, including 16 high. Direct paths include `@modelcontextprotocol/sdk`; transitive paths include Hono, Express-related packages, `picomatch`, and AI SDK provider utilities. | Known vulnerabilities remain in the shipped dependency graph, although applicability varies by used code path. | Block publication until patched versions are adopted or each remaining high-severity path has a documented reachability and risk decision. Review breaking AI SDK changes separately. |
 
 ### Package hygiene details

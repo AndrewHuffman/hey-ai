@@ -131,8 +131,9 @@ None.
 - [x] **Enforce a release advisory policy:** CI and release now block on the production high-severity audit gate. (Commit: 7e9acd9)
 - [x] **Remediate production advisories:** Upgraded the AI, MCP, globbing, and affected transitive dependency graph to zero known production advisories at verification time. (Commit: 7e9acd9)
 - [x] **Stage breaking upgrades:** Migrated to AI SDK 7/provider 4 APIs with direct regression coverage for model selection, tool schemas, tool execution, stopping, response handling, and embeddings. (Commit: 7e9acd9)
-- [x] **Set and test the supported Node range:** Declared Node `^22.13.0` and added CI coverage for Node 22.13 and the latest Node 22 release; AI SDK 7 intentionally removes Node 20 support. (Commit: 7e9acd9)
+- [x] **Set and test the supported Node range:** Declared Node `^22.13.0`; CI covers Node 22.13 plus the pinned Node 22.23.2 release runtime, and AI SDK 7 intentionally removes Node 20 support. (Commit: 7e9acd9; exact release pin refined in the current change.)
 - [x] **Gate release on verification:** Release now runs build, tests, the production audit, clean package creation, and installed-artifact smoke checks, then publishes that exact verified tarball. (Commits: 1dc1f81, 7e9acd9)
+- [x] **Eliminate CI/release toolchain drift:** PR CI and release share pinned Node/pnpm/npm setup and the same version, changelog, and verified-tarball preparation; PRs also exercise `npm publish --dry-run`. The package verifier accepts regression-tested npm 10 and npm 12 metadata shapes. (This follow-up change.)
 
 ## Bugs
 

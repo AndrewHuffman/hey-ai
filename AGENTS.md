@@ -27,9 +27,9 @@ working feature.
 
 ## Prerequisites
 
-- Node.js 22.13+ within Node 22.x. AI SDK 7 intentionally drops Node 20, and CI
-  validates both Node 22.13 and the latest Node 22 release.
-- pnpm 10.
+- Node.js 22.13+ within Node 22.x. AI SDK 7 intentionally drops Node 20. CI
+  validates Node 22.13.0 plus the pinned Node 22.23.2 release runtime.
+- pnpm 10. CI and release currently pin pnpm 10.11.0.
 - A provider key matching the selected chat model:
   `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GEMINI_API_KEY`/`GOOGLE_API_KEY`.
 - `OPENAI_API_KEY` specifically enables semantic session-history indexing.
@@ -231,8 +231,10 @@ relevance percentages as reliable until those TODO items are fixed.
 - `test:package` checks the tarball inventory, installs the artifact in an
   isolated temporary prefix, and executes its administrative commands.
 - Coverage does not collect from all source modules and has no threshold.
-- CI builds, tests, audits, and verifies the package on Linux with Node 22.13
-  and the latest Node 22 release. Its lint step is only a placeholder.
+- CI builds and tests on the minimum Node 22.13 runtime. A separate release
+  preflight uses the exact production toolchain: Node 22.23.2, pnpm 10.11.0,
+  and npm 12.0.2 through the same setup action as release. Its lint step is only
+  a placeholder.
 - Husky's pre-commit hook runs the TypeScript build only.
 
 Always add a regression test for a fixed defect. For CLI behavior, assert the
@@ -250,12 +252,19 @@ Production packaging is allowlisted and verified:
   rejects source, tests, docs, coverage, settings, and maintainer workflows.
 - The smoke test installs the tarball into a clean temporary prefix and runs
   the installed help, version, and models commands.
+- The package metadata parser supports npm 10's array response and npm 12's
+  package-name map, including lifecycle output before the JSON document.
+- CI and release share pinned setup and release-preparation composite actions.
+  PR validation performs the version bump, changelog generation, retained
+  package verification, and `npm publish --dry-run` that precede a real release.
 - CI and release block on verbose tests, the high-severity production audit,
   and package verification. Release publishes the retained verified tarball,
   not a repack of the working directory.
 
 Do not publish the working directory directly. Generate and publish the exact
-verified tarball. The release workflow's post-publication force-push and stale
+verified tarball. Never use `npm@latest` in release automation: update the
+pinned npm version in the shared setup action and verify the resulting PR CI
+before merging. The release workflow's post-publication force-push and stale
 generated release-note prerequisite remain known risks.
 
 ## Important Conventions
