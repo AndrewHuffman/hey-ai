@@ -1,3 +1,20 @@
+## [0.6.3](https://github.com/AndrewHuffman/hey-ai/compare/v0.6.2...v0.6.3) (2026-08-26)
+
+
+### Bug Fixes
+
+* address follow-up review feedback ([24ddb81](https://github.com/AndrewHuffman/hey-ai/commit/24ddb8117505e36774185b4c2a9745ed955e970d))
+* address PR review feedback ([ef77a21](https://github.com/AndrewHuffman/hey-ai/commit/ef77a2103c1a9af0549564f1a6106cbc124c4f34))
+* **deps:** migrate AI stack and clear production advisories ([72f7500](https://github.com/AndrewHuffman/hey-ai/commit/72f7500317a05e52dd8cd1c74910a40a462eb548))
+* **package:** harden pack metadata discovery ([95e69fb](https://github.com/AndrewHuffman/hey-ai/commit/95e69fb2ace431b97cfdbf45561e6c016c4f9de3))
+* **package:** normalize pnpm script arguments ([dc67bc5](https://github.com/AndrewHuffman/hey-ai/commit/dc67bc547a83cf1a8532b1f859daebd319bf541b))
+* **package:** strip npm credentials case-insensitively ([f96cea4](https://github.com/AndrewHuffman/hey-ai/commit/f96cea436d9c2cf1f97aa5dadb63e16a3cf2cba3))
+* **package:** verify complete release artifacts ([6c68835](https://github.com/AndrewHuffman/hey-ai/commit/6c688353a1c5f73dc7ff85db42383c636e0256b7))
+* **release:** gate publishing behind shared preflight ([0e120e3](https://github.com/AndrewHuffman/hey-ai/commit/0e120e324a93675dce878900184cb49a8aaf313c))
+* **release:** install native test dependencies ([5f8027b](https://github.com/AndrewHuffman/hey-ai/commit/5f8027b4798e516fe2432f6fe8a202cd8346b6d6))
+
+
+
 ## [0.6.2](https://github.com/AndrewHuffman/hey-ai/compare/v0.6.1...v0.6.2) (2026-08-25)
 
 
