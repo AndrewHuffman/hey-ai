@@ -107,6 +107,24 @@ None.
 - [ ] Add a `doctor`-style command that reports provider keys, selected model, native SQLite/sqlite-vss readiness, shell-history availability, clipboard support, and MCP connectivity without calling an LLM.
 - [ ] [🤖 Suggestion] Offer opt-in configuration defaults based on detected shell, platform, provider keys, and installed modern CLI alternatives.
 
+### Model Selection
+
+#### OpenAI Model Updates
+
+- [ ] **Make GPT-5.6 Luna the lightweight OpenAI default:** Change the final `gpt-4o-mini` fallback to `gpt-5.6-luna`, preserving the multi-provider design and explicit legacy-model selection. Comparative model evaluations are not a prerequisite for this update.
+  - [ ] Preserve and test model precedence: CLI `--model` → configuration `defaultModel` → `LLM_MODEL` → `gpt-5.6-luna`. Do not rewrite existing user configuration.
+  - [ ] Keep Luna on OpenAI Chat Completions and set `providerOptions.openai.reasoningEffort: "none"` only when the resolved model is `gpt-5.6-luna`, including selections through aliases. This setting is required for tool calling on that endpoint; leave other models' provider options unchanged.
+  - [ ] Add local `gpt`, `luna`, and `gpt-luna` aliases for `gpt-5.6-luna`; preserve existing GPT-4 aliases and direct model-ID selection. OpenAI's Models API exposes model IDs and basic metadata, but no friendly-alias mapping or alias-to-snapshot relationship.
+  - [ ] Update `hey-ai models`, README model examples, `AGENTS.md`, and the architecture guide to describe the new default accurately.
+  - [ ] Add regression coverage for default resolution, alias routing, model precedence, Luna-specific reasoning configuration, internal/MCP tool loops, and legacy/other-provider compatibility.
+  - [ ] Add an integration test using the real AI SDK/OpenAI adapter with mocked HTTP: assert the Chat Completions request contains `model: "gpt-5.6-luna"` and `reasoning_effort: "none"`, then complete a tool-call/result round trip. Mocking `generateText` and provider factories alone does not verify this contract.
+  - [ ] Keep Astra out of the recommended model catalog, aliases, and default; test that exclusion without adding a runtime model blocklist.
+- [ ] **Investigate API-backed OpenAI model discovery:** Use `GET /v1/models` for available model IDs while keeping friendly CLI aliases and lightweight-model recommendations locally curated. Keep discovery optional and separate from normal query startup, with an offline/no-key fallback; do not infer cost, capabilities, or alias targets from model names or creation dates. See the [Models API reference](https://developers.openai.com/api/reference/typescript/resources/models/methods/list).
+
+#### Claude Model Updates
+
+- [ ] **Refresh lightweight Claude model recommendations:** Scope and target model TBD.
+
 ### Features
 
 - [ ] **Streaming responses:** Use streaming generation and preserve tool-call feedback, history persistence, errors, and clipboard extraction.
