@@ -164,7 +164,20 @@ None.
 
 ## Quality
 
-None
+### Eval Framework
+
+- [ ] Setup eval infrastructure; should assess:
+  - [ ] It invokes expected tools
+  - [ ] It does not invoke tools when not expected
+  - [ ] It provides succinct responses and focus on solving the problem at hand
+- [ ] Response eval:
+  - [ ] Should ensure that it provides snippets in functions
+  - [ ] Should include some data sets / validations that actually test that the output solves the problem at hand? In some ways this is testing the model more than the system...
+  - [ ] LLM-as-a-Judge evaluations on snippets using a higher end model?
+- [ ] Context retrieval eval:
+  - [ ] Looks up zsh history when user references previous commands they've ran
+  - [ ] Looks up previous hey-ai history (prompts and responses) if user references previous chats (I believe right now it always includes this in context?)
+  - [ ] 
 
 ## Features
 
