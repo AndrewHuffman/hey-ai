@@ -1,3 +1,7 @@
+## [0.6.4](https://github.com/AndrewHuffman/hey-ai/compare/v0.6.3...v0.6.4) (2026-09-20)
+
+
+
 ## [0.6.3](https://github.com/AndrewHuffman/hey-ai/compare/v0.6.2...v0.6.3) (2026-08-26)
 
 
