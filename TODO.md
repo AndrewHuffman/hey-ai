@@ -100,7 +100,65 @@ None.
 - [ ] [🤖 Suggestion] Remove dead methods/exports and unused direct dependencies after tests protect the relevant compatibility boundaries.
 - [ ] [🤖 Suggestion] Separate response rendering from `LlmWrapper` so the wrapper can be tested without console side effects.
 - [ ] [🤖 Suggestion] Avoid repeated synchronous `which` subprocesses and duplicate `CommandDetector` construction during startup.
-- [ ] Add evaluation testing for command correctness, platform specificity, tool selection, and safety; assess LLM-as-a-judge tooling without coupling core tests to LangSmith.
+
+### Eval Framework
+
+Evaluate whether the shipped combination of model, system prompt, context, tool
+definitions, and orchestration helps users solve terminal tasks. Command
+correctness is part of product quality even when a failure originates in the
+model. Keep deterministic regression tests alongside behavioral evals.
+
+Current behavior: session and zsh history are fetched on demand through
+`search_session_history` and `get_recent_commands`; neither is automatically
+included in the initial context. The system prompt requests a single code
+block, no surrounding prose, and parameterized functions for complex logic.
+The CLI copies the first supported shell code block to the clipboard.
+
+The proposals below are agreed backlog work, not completed implementation.
+The intended output contract permits useful prose and requires functions only
+for complex/reusable solutions; see [Response Presentation and Clipboard](#response-presentation-and-clipboard).
+
+#### Tool Selection and Context Use
+
+- [ ] **Cover all five built-in tools with positive and negative selection cases:** For each tool, include cases where it is required, where it is allowed, and where it is unnecessary/forbidden given the supplied context. Judge the information needed, not trigger words alone.
+
+| Built-in tool | Expected selection | Expected non-selection |
+| --- | --- | --- |
+| `get_recent_commands` | “Why did my last terminal command fail?” with the command available only in the history fixture. | The relevant command and error are already supplied, or the question concerns a previous hey-ai conversation. |
+| `search_session_history` | “Adapt the backup command we discussed earlier” with the prior solution available only in session history. | The prior solution is already supplied, or the question concerns only a recent terminal command. |
+| `list_project_files` | “Which configuration files does this project have?” with no file listing supplied. | A self-contained syntax question, or a known file path that can be read directly without discovery. |
+| `read_file_content` | “Explain the scripts in this project's package.json” with its contents available only through the file fixture. | The full relevant content is already supplied, or only filenames/structure are requested. |
+| `get_command_docs` | “Check the locally installed command's docs for the supported option” with the answer available only in the docs fixture. | A basic syntax question with sufficient context, or the relevant documentation is already supplied. |
+
+- [ ] **Exercise combined retrieval:** Include discovering a file and then reading it, and retrieving history followed by command-doc verification when both are needed. Check that unrelated tools remain unused and already-sufficient results do not trigger redundant calls.
+- [ ] **Check arguments and use of results:** Validate targeted search terms, file paths, and bounded retrieval; verify the final answer uses relevant returned facts rather than merely rewarding a tool call. Permit equivalent valid tool paths unless order is essential.
+- [ ] **Cover negative and failure cases:** Include self-contained questions, ambiguous references, empty history, irrelevant results, unavailable tools, and tool errors. Reward clarification or an honest limitation when the needed context is missing, rather than invented history.
+- [ ] **Measure retrieval quality separately:** Use labeled session fixtures to measure whether relevant entries appear near the top, independently of whether the model chooses the search tool. Track the existing hybrid-ranking/backfill defects as known failures, not acceptable baselines.
+
+#### Response Quality and Task Success
+
+- [ ] **Evaluate concise, focused answers:** Assess whether the response addresses the requested task without unnecessary alternatives or explanation. Keep completeness and correctness distinct from brevity.
+- [ ] **Evaluate the agreed output contract:** Allow direct commands for simple tasks and require functions for complex/reusable solutions. Allow useful prose, including clarification, missing-context explanations, and tool failures, outside runnable code blocks. Evaluate whether code and prose are distinctly separated; verify exact clipboard contents through deterministic extraction/rendering tests rather than judge ratings.
+- [ ] **Build task datasets with verifiable outcomes:** Include representative command tasks with inputs and expected results, so evals assess whether the output solves the problem rather than matches one reference string.
+- [ ] **Evaluate platform specificity and safety:** Cover macOS/BSD versus Linux/GNU commands, the stated shell and installed tools, quoting and filenames with spaces, and unintended destructive effects.
+- [ ] **Assess LLM-as-a-judge for snippets:** Explore a more capable judge for qualities that deterministic checks cannot establish; keep core tests independent of LangSmith or any hosted eval service.
+- [ ] **Use objective checks first:** Check format and shell syntax, then execute selected snippets against disposable fixtures and assert output, exit status, and filesystem changes. Syntax validity alone does not establish task success. Use an isolated execution environment without host credentials, host mounts, or network access for generated commands; a temporary directory alone is not a security boundary.
+- [ ] **Calibrate judge scoring:** Define separate correctness, relevance, concision, and safety rubrics; compare judge ratings with human-reviewed examples. Version the judge prompt/model, provide the task context and tool evidence, and do not let a favorable judge score override an objective failure.
+
+#### Harness and Rollout
+
+- [ ] **Set up eval infrastructure:** Support the tool-use, response, and context-retrieval cases above, with inspectable per-case results.
+- [ ] **Separate test layers:** Keep mocked-provider contract tests deterministic; use a real model with controlled tool fixtures to assess model decisions; add a smaller integration set using actual context providers against isolated synthetic data. Stubbed retrieval cannot validate search quality.
+- [ ] **Reuse production behavior:** Exercise the production prompt, tool definitions, and routing rather than a copied eval prompt. Add the smallest injection/trace seams needed to control OS, shell, command availability, history, and tool results, and capture calls, arguments, results, final text, usage, and timing. The wrapper currently returns only text, and query orchestration embeds the prompt and reads the host OS.
+- [ ] **Version cases and runs:** Record case IDs, fixture/rubric versions, code revision, resolved model and provider settings, prompt version/hash, repeated trials, and per-case failures. Define required, allowed, and forbidden tools plus outcome assertions for each case; retain failures rather than retrying until a pass.
+- [ ] **Keep runs isolated and bounded:** Use synthetic history/files and fake MCP tools; isolate home/config/database/cache paths, stub clipboard writes, and disable incidental embedding requests. Make live-model and judge calls explicit, budgeted runs with timeouts and call limits.
+- [ ] **Start small before gating CI:** Begin with roughly 15–25 human-reviewed cases covering direct answers, both history sources, file/docs lookup, failure handling, and platform differences. Report dimension-level pass rates, run counts, latency, and token usage; distinguish provider/harness errors from behavioral failures. Repeat live cases to understand variability before selecting regression thresholds or making paid evals release-blocking.
+
+#### Decisions to Discuss
+
+- **Initial scope:** Prioritize internal context tools and command suggestions, or include MCP tool selection in the first dataset? Mutation approval and context-flag enforcement remain separate product fixes; evals should expose their gaps without treating model behavior as enforcement.
+- **Run policy:** Which model/configuration is the initial baseline, how often should live runs occur, and what cost/variance is acceptable? Comparative evals remain independent of the already-planned Luna default update.
+- **Framework choice:** Choose a runner or hosted integration after agreeing on the case schema, trace requirements, and first dataset.
 
 ### Setup and Ease of Use
 
@@ -129,6 +187,19 @@ None.
 
 - [ ] **Streaming responses:** Use streaming generation and preserve tool-call feedback, history persistence, errors, and clipboard extraction.
 - [ ] **Image file support:** Accept and analyze image files through multimodal provider capabilities while enforcing file-size and privacy controls.
+
+### Response Presentation and Clipboard
+
+Agreed product direction; implementation is still pending. These requirements
+apply to the prompt, terminal rendering, and clipboard extraction, with eval
+coverage linked from [Eval Framework](#eval-framework).
+
+- [ ] **Permit useful prose:** Replace the blanket single-code-block/no-prose instruction with a contract that allows concise explanation, clarification, missing-context messages, and tool-failure messages. Keep prose outside runnable code; do not require explanations to be encoded as `echo` commands.
+- [ ] **Use functions where justified:** Require parameterized functions for complex/reusable solutions; allow simple commands without a function wrapper.
+- [ ] **Clearly distinguish runnable code from prose:** Give runnable snippets an explicit, consistent visual boundary in terminal output. Consider syntax highlighting or contrasting styles; the distinction must also remain clear without color and in piped/plain-text output. The exact presentation remains to be designed.
+- [ ] **Copy only runnable code:** Exclude prose, Markdown fences, terminal styling/ANSI escapes, tool feedback, and illustrative output from clipboard contents. A prose-only response must leave the clipboard unchanged and must not claim code was copied. A code fence alone does not establish that its contents are a runnable solution.
+- [ ] **Define snippet selection and example conventions:** Decide how multiple runnable blocks, non-runnable code/config examples, placeholders, and usage examples are identified and handled. The current implementation copies the first supported shell block; agree on the intended selection rule before changing that behavior. Reconcile the prompt's comment restrictions with its commented examples.
+- [ ] **Add presentation and clipboard regression coverage:** Check exact copied content for mixed prose/code responses and styled output; check absence of clipboard writes for prose-only responses and non-runnable examples. Add multi-block and usage-example cases once their selection rules are settled. Keep model-format evals separate from deterministic renderer/extractor guarantees.
 
 ### Documentation
 
@@ -179,23 +250,6 @@ None.
   - [x] Added tool routing to distinguish internal tools from MCP tools.
   - [x] Updated the system prompt with context-tool guidance.
   - [x] Added automated coverage for internal-tool registration and execution.
-
-## Quality
-
-### Eval Framework
-
-- [ ] Setup eval infrastructure; should assess:
-  - [ ] It invokes expected tools
-  - [ ] It does not invoke tools when not expected
-  - [ ] It provides succinct responses and focus on solving the problem at hand
-- [ ] Response eval:
-  - [ ] Should ensure that it provides snippets in functions
-  - [ ] Should include some data sets / validations that actually test that the output solves the problem at hand? In some ways this is testing the model more than the system...
-  - [ ] LLM-as-a-Judge evaluations on snippets using a higher end model?
-- [ ] Context retrieval eval:
-  - [ ] Looks up zsh history when user references previous commands they've ran
-  - [ ] Looks up previous hey-ai history (prompts and responses) if user references previous chats (I believe right now it always includes this in context?)
-  - [ ] 
 
 ## Features
 
