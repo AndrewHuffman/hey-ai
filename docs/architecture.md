@@ -394,7 +394,8 @@ small subset of schema forms.
 
 The repository supports Node.js 22.13+ within Node 22. `pnpm run build` first
 removes the explicit `dist/` directory through a cross-platform Node script,
-then compiles TypeScript into a fresh output tree. `package.json.files` permits
+then compiles TypeScript into a fresh output tree and sets `dist/index.js` to
+mode `0755` so existing CLI links remain executable. `package.json.files` permits
 only `dist/`; npm also includes `package.json` and README automatically.
 
 `prepack` performs the same clean build. `pnpm run test:package` deliberately
@@ -418,7 +419,8 @@ preparation flag off before publishing the already-verified tarball.
 flowchart TB
     Source["src/**/*.ts"] --> Clean["node scripts/clean.mjs<br/>remove only dist/"]
     Clean --> Build["tsc"]
-    Build --> Dist["dist/"]
+    Build --> Permissions["make-cli-executable.mjs<br/>chmod dist/index.js to 0755"]
+    Permissions --> Dist["dist/"]
     Allowlist["package.json.files<br/>dist only"] --> Pack["npm pack"]
     Dist --> Pack
 
