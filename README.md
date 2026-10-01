@@ -67,6 +67,9 @@ pnpm run build
 pnpm link --global
 ```
 
+Every build restores executable permissions on `dist/index.js`, so existing
+CLI links continue working after rebuilding.
+
 ## Usage
 
 Ask a question directly:

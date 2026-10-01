@@ -57,8 +57,9 @@ pnpm run build:link
 ```
 
 The build removes `dist/` with `scripts/clean.mjs` before invoking `tsc`, so
-deleted source modules cannot survive as stale compiled output. `prepack` runs
-the same clean build.
+deleted source modules cannot survive as stale compiled output. After compilation,
+`scripts/make-cli-executable.mjs` sets `dist/index.js` to mode `0755` so existing
+CLI links keep working after every clean build. `prepack` runs the same build.
 
 ### Test
 
