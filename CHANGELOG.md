@@ -1,3 +1,13 @@
+## [0.6.6](https://github.com/AndrewHuffman/hey-ai/compare/v0.6.5...v0.6.6) (2026-10-01)
+
+
+### Bug Fixes
+
+* **build:** restore CLI executable permissions after compilation ([4cd980d](https://github.com/AndrewHuffman/hey-ai/commit/4cd980de4833dc1bb05da046173b828370cfeb3b))
+* **deps:** update vulnerable fast-uri and undici dependencies ([db8e768](https://github.com/AndrewHuffman/hey-ai/commit/db8e7682567adc2cae3df8144d1141f061bb926a))
+
+
+
 ## [0.6.5](https://github.com/AndrewHuffman/hey-ai/compare/v0.6.4...v0.6.5) (2026-09-20)
 
 
