@@ -12,6 +12,9 @@ that every depicted path is working as intended.
 - [Agent guidance](../AGENTS.md) — development commands, repository
   conventions, and current implementation constraints.
 - [Backlog](../TODO.md) — prioritized follow-up work from the audit.
+- [Eval dataset plan](./eval-dataset-plan.md) — proposed case schema,
+  history-derived seed tasks, tool-selection matrix, and multi-turn
+  conversation scenarios.
 - [Project README](../README.md) — user-facing installation and usage guide.
 
 The architecture diagrams intentionally distinguish current behavior from

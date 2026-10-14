@@ -29,6 +29,8 @@ None.
 - [ ] **Correct hybrid relevance:** Fix BM25 normalization so stronger keyword matches rank higher, define meaningful score fusion, and add ordering/score regression tests.
 - [ ] **Backfill legacy FTS rows:** Rebuild the external-content FTS table when needed so sessions created before FTS initialization are searchable.
 - [ ] **Make indexing transactional:** Keep vector insertion and `history_embeddings` mapping consistent when either write fails.
+- [ ] [🤖 Suggestion] **Build FTS queries safely:** `searchFTS()` passes the model's query to FTS5 as implicit-AND terms, so `previous touch command` misses a stored touch loop, and `-`/`.` (`hey-ai`, `*.json`) raise syntax errors that fall back to a whole-string `LIKE`. Tokenize and quote terms, and consider OR semantics with BM25 ranking.
+- [ ] [🤖 Suggestion] **Use recency and cwd in session retrieval:** One-shot follow-ups that need a prior `hey-ai` answer (rather than a terminal command, which `get_recent_commands` can supply) are served only through `search_session_history`, yet it ranks by text relevance alone although every row stores `cwd` and `timestamp`, and `getRecentEntries()` is unused. Boost same-cwd and recent rows, or add a "most recent interactions" tool scoped to the cwd, and measure the gain with the eval plan's retrieval ablation.
 
 ### CLI Contracts
 
@@ -118,6 +120,9 @@ The CLI copies the first supported shell code block to the clipboard.
 The proposals below are agreed backlog work, not completed implementation.
 The intended output contract permits useful prose and requires functions only
 for complex/reusable solutions; see [Response Presentation and Clipboard](#response-presentation-and-clipboard).
+
+The proposed case schema, seed datasets, tool-selection matrix, and multi-turn
+conversation scenarios are in the [eval dataset plan](docs/eval-dataset-plan.md).
 
 #### Tool Selection and Context Use
 
