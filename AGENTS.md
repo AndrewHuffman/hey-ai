@@ -264,10 +264,16 @@ Production packaging is allowlisted and verified:
 - The audit ignores exactly one advisory via `pnpm.auditConfig.ignoreGhsas`:
   GHSA-vfj7-8cjw-p6xm (`braces` recursion depth, no patched version). It is
   reached only through `FileContext.listFiles()` → `globby`, whose pattern is
-  hard-coded. globby escapes or drops `.gitignore` rule text before it reaches
-  `micromatch`; only a nested ignore file's directory path can carry brace
-  syntax, bounded by the filesystem path limit. A resulting `RangeError` is
-  caught by `listFiles()`, which returns no files. Never add an exception
+  hard-coded. globby 16.2.4 turns `.gitignore` rules into fast-glob `ignore`
+  patterns (`convertPatternsForFastGlob`). Rule text is escaped with
+  `fastGlob.escapePath`, or dropped when a wildcard rule contains `{}()|\`,
+  and any-depth rules escape the ignore file's directory too. Anchored glob
+  rules (for example `/*.log`) do not: their directory prefix comes from
+  `anchorToCwd()` unescaped, so a nested `.gitignore` in a directory named
+  `sub{x}` yields `sub{x}/*.log`. That directory name is the only brace input,
+  bounded by the filesystem path limit. A resulting `RangeError` is caught by
+  `listFiles()`, which returns no files. Re-check this boundary when upgrading
+  globby. Never add an exception
   without this kind of reachability analysis, and track its removal in
   [TODO.md](TODO.md).
 
