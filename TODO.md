@@ -65,6 +65,7 @@ None.
 - [ ] **Scope session retrieval:** Support project/cwd filtering and show the source project in history results to prevent unrelated context carry-over.
 - [ ] **Harden file boundaries:** Resolve real paths to prevent symlink escape, reject non-files/binary content as appropriate, and enforce byte/token limits before reading the whole file.
 - [ ] **Treat retrieved content as untrusted:** Delimit/sanitize file, command-history, session-history, docs, and MCP content to reduce prompt-injection and Markdown-fence risks.
+- [ ] **Retire the `braces` audit exception:** `pnpm.auditConfig.ignoreGhsas` ignores GHSA-vfj7-8cjw-p6xm (unbounded recursion in `braces` ≤ 3.0.3, no patched release), reached only through `globby` → `micromatch`. Remove the exception when a patch ships, or replace `globby` with a matcher that does not depend on `braces` (for example `tinyglobby` plus the `ignore` package for `.gitignore` handling).
 
 ### MCP Robustness
 

@@ -261,6 +261,15 @@ Production packaging is allowlisted and verified:
 - CI and release block on verbose tests, the high-severity production audit,
   and package verification. Release publishes the retained verified tarball,
   not a repack of the working directory.
+- The audit ignores exactly one advisory via `pnpm.auditConfig.ignoreGhsas`:
+  GHSA-vfj7-8cjw-p6xm (`braces` recursion depth, no patched version). It is
+  reached only through `FileContext.listFiles()` → `globby`, whose pattern is
+  hard-coded. globby escapes or drops `.gitignore` rule text before it reaches
+  `micromatch`; only a nested ignore file's directory path can carry brace
+  syntax, bounded by the filesystem path limit. A resulting `RangeError` is
+  caught by `listFiles()`, which returns no files. Never add an exception
+  without this kind of reachability analysis, and track its removal in
+  [TODO.md](TODO.md).
 
 Do not publish the working directory directly. Generate and publish the exact
 verified tarball. Never use `npm@latest` in release automation: update the
