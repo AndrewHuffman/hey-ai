@@ -1,3 +1,12 @@
+## [0.6.7](https://github.com/AndrewHuffman/hey-ai/compare/v0.6.6...v0.6.7) (2026-10-14)
+
+
+### Bug Fixes
+
+* **deps:** update MCP SDK and express, allowlist unpatched braces advisory ([f708ea8](https://github.com/AndrewHuffman/hey-ai/commit/f708ea891090439f99e2bc5a01e6ca948c8d6560))
+
+
+
 ## [0.6.6](https://github.com/AndrewHuffman/hey-ai/compare/v0.6.5...v0.6.6) (2026-10-01)
 
 
