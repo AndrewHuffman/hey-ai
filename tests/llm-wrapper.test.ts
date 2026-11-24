@@ -32,7 +32,75 @@ jest.unstable_mockModule('@ai-sdk/google', () => ({
   createGoogleGenerativeAI: createGoogleMock,
 }));
 
-const { LlmWrapper } = await import('../src/llm/wrapper.js');
+const { LlmWrapper, MODEL_ALIASES, resolveModelAlias, getRecommendedModels } =
+  await import('../src/llm/wrapper.js');
+
+// Retired on the Claude API per
+// https://platform.claude.com/docs/en/about-claude/model-deprecations
+const RETIRED_CLAUDE_MODELS = [
+  'claude-opus-4-1-20250805',
+  'claude-sonnet-4-20250514',
+  'claude-opus-4-20250514',
+  'claude-3-haiku-20240307',
+  'claude-3-7-sonnet-20250219',
+  'claude-3-5-haiku-20241022',
+  'claude-3-opus-20240229',
+  'claude-3-5-sonnet-20241022',
+  'claude-3-5-sonnet-20240620',
+  'claude-3-sonnet-20240229',
+  'claude-2.1',
+  'claude-2.0',
+];
+
+describe('Claude model aliases', () => {
+  it.each([
+    ['claude', 'claude-opus-5-5'],
+    ['opus', 'claude-opus-5-5'],
+    ['claude-opus', 'claude-opus-5-5'],
+    ['opus-5.5', 'claude-opus-5-5'],
+    ['claude-opus-5.5', 'claude-opus-5-5'],
+    ['sonnet', 'claude-sonnet-5-5'],
+    ['claude-sonnet', 'claude-sonnet-5-5'],
+    ['sonnet-5.5', 'claude-sonnet-5-5'],
+    ['claude-sonnet-5.5', 'claude-sonnet-5-5'],
+    ['haiku', 'claude-haiku-5-5'],
+    ['claude-haiku', 'claude-haiku-5-5'],
+    ['haiku-5.5', 'claude-haiku-5-5'],
+    ['claude-haiku-5.5', 'claude-haiku-5-5'],
+    ['fable', 'claude-fable-5-2'],
+    ['claude-fable', 'claude-fable-5-2'],
+    ['fable-5.2', 'claude-fable-5-2'],
+    ['claude-fable-5.2', 'claude-fable-5-2'],
+    ['Sonnet', 'claude-sonnet-5-5'],
+    ['claude-haiku-4.5', 'claude-haiku-4-5-20251001'],
+    ['opus-4.5', 'claude-opus-4-5-20251101'],
+  ])('resolves %s to %s', (alias, expected) => {
+    expect(resolveModelAlias(alias)).toBe(expected);
+  });
+
+  it('passes unaliased Claude model IDs through unchanged', () => {
+    expect(resolveModelAlias('claude-opus-4-8')).toBe('claude-opus-4-8');
+  });
+
+  it('never targets a retired Claude model', () => {
+    const retiredTargets = Object.entries(MODEL_ALIASES)
+      .filter(([, id]) => RETIRED_CLAUDE_MODELS.includes(id));
+    expect(retiredTargets).toEqual([]);
+  });
+
+  it('recommends the current Claude lineup with descriptions', () => {
+    const anthropic = getRecommendedModels().find(p => p.provider === 'Anthropic');
+    const ids = anthropic?.models.map(m => m.id) ?? [];
+
+    for (const id of ['claude-fable-5-2', 'claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5']) {
+      expect(ids).toContain(id);
+      expect(anthropic?.models.find(m => m.id === id)?.description).toEqual(expect.any(String));
+    }
+    for (const id of RETIRED_CLAUDE_MODELS) {
+      expect(ids).not.toContain(id);
+    }
+  });
+});
 
 describe('LlmWrapper', () => {
   let consoleSpy: ReturnType<typeof jest.spyOn>;
@@ -59,8 +127,61 @@ describe('LlmWrapper', () => {
     expect(openAIChatMock).toHaveBeenNthCalledWith(1, 'gpt-4o');
     expect(openAIChatMock).toHaveBeenNthCalledWith(2, 'custom-model');
     expect(openAIProviderMock).not.toHaveBeenCalled();
-    expect(anthropicProviderMock).toHaveBeenCalledWith('claude-3-5-haiku-20241022');
+    expect(anthropicProviderMock).toHaveBeenCalledWith('claude-haiku-5-5');
     expect(googleProviderMock).toHaveBeenCalledWith('gemini-2.0-flash');
+  });
+
+  it.each(['claude', 'opus', 'sonnet', 'haiku', 'fable', 'claude-opus-4-8'])(
+    'routes %s to the Anthropic provider and not OpenAI',
+    async (model) => {
+      const wrapper = new LlmWrapper();
+
+      await wrapper.prompt('anthropic', { model });
+
+      expect(anthropicProviderMock).toHaveBeenCalledWith(resolveModelAlias(model));
+      expect(createAnthropicMock).toHaveBeenCalledWith({ apiKey: process.env.ANTHROPIC_API_KEY });
+      expect(createOpenAIMock).not.toHaveBeenCalled();
+      expect(openAIChatMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it('does not send sampling or thinking settings that current Claude models reject', async () => {
+    const wrapper = new LlmWrapper();
+
+    await wrapper.prompt('anthropic', { model: 'opus' });
+
+    const request = generateTextMock.mock.calls[0][0];
+    expect(request).not.toHaveProperty('temperature');
+    expect(request).not.toHaveProperty('topP');
+    expect(request).not.toHaveProperty('topK');
+    expect(request).not.toHaveProperty('toolChoice');
+    expect(request).not.toHaveProperty('providerOptions');
+  });
+
+  it('prints a refusal notice when the model declines the request', async () => {
+    generateTextMock.mockResolvedValue({ text: '', finishReason: 'content-filter' });
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const wrapper = new LlmWrapper();
+
+    try {
+      await expect(wrapper.prompt('anthropic', { model: 'opus' })).resolves.toBe('');
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('declined'));
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  it('prints no refusal notice for a normal completion', async () => {
+    generateTextMock.mockResolvedValue({ text: 'ok', finishReason: 'stop' });
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const wrapper = new LlmWrapper();
+
+    try {
+      await wrapper.prompt('anthropic', { model: 'opus' });
+      expect(errorSpy).not.toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 
   it('passes instructions, uses the ten-step stop condition, and returns generated text', async () => {

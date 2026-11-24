@@ -149,6 +149,10 @@ tool even if its schema overwrote the internal definition exposed to the AI SDK.
 ### LLM wrapper (`src/llm/wrapper.ts`)
 
 - Resolves friendly aliases and infers a provider from the resolved model name.
+  Claude aliases (`claude`/`opus`, `sonnet`, `haiku`, `fable`) target the
+  current lineup; a test rejects any alias that targets a retired model.
+- Prints a refusal notice to stderr when the model declines the request
+  (`finishReason: "content-filter"`).
 - Model precedence is: CLI `--model` → configuration `defaultModel` →
   `LLM_MODEL` → `gpt-4o-mini`.
 - Adapts JSON Schema tool definitions to a limited Zod subset.
