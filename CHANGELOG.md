@@ -1,3 +1,17 @@
+# [0.7.0](https://github.com/AndrewHuffman/hey-ai/compare/v0.6.7...v0.7.0) (2026-11-24)
+
+
+### Bug Fixes
+
+* **deps:** upgrade zod to 4 and body-parser to 2.4.0 ([b7cea88](https://github.com/AndrewHuffman/hey-ai/commit/b7cea88caeb69ed73d293d6f609153442e4c9289)), closes [hi#severity](https://github.com/hi/issues/severity)
+
+
+### Features
+
+* **models:** target the current Claude lineup ([b3f09cc](https://github.com/AndrewHuffman/hey-ai/commit/b3f09ccd59783a5fbb0f4f1300eef4ce3803916d))
+
+
+
 ## [0.6.7](https://github.com/AndrewHuffman/hey-ai/compare/v0.6.6...v0.6.7) (2026-10-14)
 
 
