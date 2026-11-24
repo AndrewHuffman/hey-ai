@@ -124,10 +124,11 @@ hey-ai -m gemini "help me with this git command"
 ```
 
 **Common Aliases:**
-- `haiku` → `claude-3-5-haiku-20241022`
-- `sonnet` → `claude-3-5-sonnet-20241022`
-- `opus` → `claude-3-opus-20240229`
-- `gemini` → `gemini-1.5-flash`
+- `claude`, `opus` → `claude-opus-5-5`
+- `sonnet` → `claude-sonnet-5-5`
+- `haiku` → `claude-haiku-5-5`
+- `fable` → `claude-fable-5-2`
+- `gemini` → `gemini-2.0-flash`
 - `gpt4` → `gpt-4o`
 
 

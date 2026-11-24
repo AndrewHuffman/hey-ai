@@ -188,7 +188,9 @@ conversation scenarios are in the [eval dataset plan](docs/eval-dataset-plan.md)
 
 #### Claude Model Updates
 
-- [ ] **Refresh lightweight Claude model recommendations:** Scope and target model TBD.
+- [x] **Refresh Claude model recommendations:** Claude aliases and `hey-ai models` now target the current lineup (Fable 5.2, Opus 5.5, Sonnet 5.5, Haiku 5.5). Aliases that pointed at retired models were repointed or removed, and a regression test rejects aliases that target retired models.
+- [ ] **Opt into server-side refusal fallbacks for Claude:** Consider `providerOptions.anthropic.fallbacks: "default"` for Fable 5.2, Opus 5.5, and Sonnet 5.5 so a safety refusal is retried on a fallback model in the same request. Confirm per-model support and billing first. Haiku 5.5 has no server-side fallback.
+- [ ] **Skip clipboard and history writes for refused responses:** `LlmWrapper` prints a notice when a model declines (`finishReason: "content-filter"`), but `processQuery()` can still copy a complete code block from the partial answer and saves the partial response to history.
 
 ### Features
 

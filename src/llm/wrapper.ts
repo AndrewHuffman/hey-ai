@@ -24,20 +24,32 @@ export interface LlmOptions {
  * Model aliases for user-friendly names
  */
 export const MODEL_ALIASES: Record<string, string> = {
-  // Claude aliases
-  'claude-haiku': 'claude-3-5-haiku-20241022',
+  // Claude aliases: current lineup per
+  // https://platform.claude.com/docs/en/about-claude/models/overview
+  // Never point an alias at a retired model; see the deprecations page.
+  'claude': 'claude-opus-5-5',
+  'opus': 'claude-opus-5-5',
+  'claude-opus': 'claude-opus-5-5',
+  'opus-5.5': 'claude-opus-5-5',
+  'claude-opus-5.5': 'claude-opus-5-5',
+  'sonnet': 'claude-sonnet-5-5',
+  'claude-sonnet': 'claude-sonnet-5-5',
+  'sonnet-5.5': 'claude-sonnet-5-5',
+  'claude-sonnet-5.5': 'claude-sonnet-5-5',
+  'haiku': 'claude-haiku-5-5',
+  'claude-haiku': 'claude-haiku-5-5',
+  'haiku-5.5': 'claude-haiku-5-5',
+  'claude-haiku-5.5': 'claude-haiku-5-5',
+  'fable': 'claude-fable-5-2',
+  'claude-fable': 'claude-fable-5-2',
+  'fable-5.2': 'claude-fable-5-2',
+  'claude-fable-5.2': 'claude-fable-5-2',
+
+  // Previous-generation Claude models that are still served
   'claude-haiku-4.5': 'claude-haiku-4-5-20251001',
-  'claude-3.5-haiku': 'claude-3-5-haiku-20241022',
-  'claude-sonnet': 'claude-3-5-sonnet-20241022',
-  'claude-sonnet-4': 'claude-sonnet-4-20250514',
-  'claude-3.5-sonnet': 'claude-3-5-sonnet-20241022',
-  'claude-opus': 'claude-3-opus-20240229',
   'claude-opus-4.5': 'claude-opus-4-5-20251101',
   'opus-4.5': 'claude-opus-4-5-20251101',
-  'haiku': 'claude-3-5-haiku-20241022',
-  'sonnet': 'claude-3-5-sonnet-20241022',
-  'opus': 'claude-3-opus-20240229',
-  
+
   // Gemini aliases
   'gemini': 'gemini-2.0-flash',
   'gemini-flash': 'gemini-2.0-flash',
@@ -73,12 +85,12 @@ export function getRecommendedModels() {
 
   // Predefined descriptions for known models
   const descriptions: Record<string, string> = {
-    'claude-3-5-sonnet-20241022': 'Most capable model, great for coding',
-    'claude-3-5-haiku-20241022': 'Fast and efficient model',
-    'claude-3-opus-20240229': 'Powerful legacy model',
-    'claude-sonnet-4-20250514': 'Next-generation Sonnet model',
-    'claude-haiku-4-5-20251001': 'Ultra-fast Claude 4.5 Haiku',
-    'claude-opus-4-5-20251101': 'The frontier: Claude 4.5 Opus',
+    'claude-fable-5-2': 'Most capable Claude, for demanding reasoning and long-horizon work',
+    'claude-opus-5-5': 'Recommended Claude for most work, including agentic coding',
+    'claude-sonnet-5-5': 'Best balance of speed and intelligence',
+    'claude-haiku-5-5': 'Fastest, lowest-cost Claude',
+    'claude-opus-4-5-20251101': 'Previous-generation Claude Opus',
+    'claude-haiku-4-5-20251001': 'Previous-generation Claude Haiku',
     'gemini-2.0-flash': 'Next-gen fast model',
     'gemini-1.5-pro': 'Highly capable model with large context',
     'gemini-1.5-flash': 'Fast and cost-effective',
@@ -254,6 +266,12 @@ export class LlmWrapper {
     
     const responseText = result.text;
     console.log(responseText);
+    // Current Claude models can decline a request (API stop_reason "refusal",
+    // which the AI SDK reports as "content-filter"); without a notice the user
+    // sees only a blank or truncated answer.
+    if (result.finishReason === 'content-filter') {
+      console.error(chalk.yellow('The model declined to complete this response. Try rephrasing, or choose another model with --model.'));
+    }
     return responseText;
   }
 
