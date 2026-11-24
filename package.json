@@ -64,7 +64,7 @@
     "ignore": "^7.0.6",
     "inquirer": "^13.4.3",
     "sqlite-vss": "^0.1.2",
-    "zod": "^3.25.76"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.2.0",
