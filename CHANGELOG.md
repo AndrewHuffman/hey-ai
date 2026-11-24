@@ -1,3 +1,12 @@
+## [0.7.1](https://github.com/AndrewHuffman/hey-ai/compare/v0.7.0...v0.7.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* **cli:** report the package.json version ([9a62256](https://github.com/AndrewHuffman/hey-ai/commit/9a62256d2d6b2eb757f806413fdc7cc8831791d0))
+
+
+
 # [0.7.0](https://github.com/AndrewHuffman/hey-ai/compare/v0.6.7...v0.7.0) (2026-11-24)
 
 
