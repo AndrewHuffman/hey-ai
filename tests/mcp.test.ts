@@ -1,4 +1,9 @@
 import { jest } from '@jest/globals';
+import { readFileSync } from 'node:fs';
+
+const packageVersion: string = JSON.parse(
+  readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+).version;
 
 const loadConfigMock = jest.fn() as any;
 const connectMock = jest.fn() as any;
@@ -82,10 +87,9 @@ describe('McpManager with MCP SDK 1.30', () => {
       stderr: 'ignore',
     });
     expect(clientConstructorMock).toHaveBeenCalledWith(
-      { name: 'hey-ai-client', version: expect.any(String) },
+      { name: 'hey-ai-client', version: packageVersion },
       { capabilities: {} },
     );
-    expect(clientConstructorMock.mock.calls[0][0].version).not.toHaveLength(0);
     expect(connectMock).toHaveBeenCalledWith(transportConstructorMock.mock.results[0].value);
     expect(manager.hasTools()).toBe(true);
     expect(manager.getServerForTool('lookup')).toBe('local');

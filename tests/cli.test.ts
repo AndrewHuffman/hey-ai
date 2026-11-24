@@ -60,6 +60,27 @@ jest.unstable_mockModule('chalk', () => ({
 }));
 
 describe('CLI Arguments', () => {
+  it('reports the package.json version and makes no LLM call', async () => {
+    const { readFileSync } = await import('node:fs');
+    const packageVersion = JSON.parse(
+      readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+    ).version;
+    const { createProgram } = await import('../src/index.js');
+    const { LlmWrapper } = await import('../src/llm/wrapper.js');
+    (LlmWrapper as any).mockClear();
+    const program = createProgram();
+    let output = '';
+    program.exitOverride().configureOutput({ writeOut: (text) => { output += text; } });
+
+    await expect(program.parseAsync(['node', 'hey-ai', '--version']))
+      .rejects.toMatchObject({ code: 'commander.version' });
+
+    expect(output.trim()).toBe(packageVersion);
+    for (const result of (LlmWrapper as any).mock.results) {
+      expect(result.value.streamPrompt).not.toHaveBeenCalled();
+    }
+  });
+
   it('should handle --show-prefs', async () => {
     const { createProgram } = await import('../src/index.js');
     const program = createProgram();

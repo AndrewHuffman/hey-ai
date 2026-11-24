@@ -8,6 +8,7 @@ import { RagEngine } from './rag/engine.js';
 import { LlmWrapper, McpToolDef, getRecommendedModels } from './llm/wrapper.js';
 import { CommandDetector } from './context/commands.js';
 import { ConfigManager } from './config.js';
+import { PACKAGE_VERSION } from './version.js';
 
 async function processQuery(query: string, options: any, rag: RagEngine, llm: LlmWrapper, log: Function) {
   try {
@@ -174,7 +175,7 @@ export function createProgram() {
   program
     .name('hey-ai')
     .description('Enhanced CLI for LLM interactions with context and MCP support')
-    .version('1.0.0')
+    .version(PACKAGE_VERSION)
     .argument('[query]', 'The query to ask the LLM (omitting starts interactive mode)')
     .option('-m, --model <model>', 'Specify the model to use')
     .option('--no-history', 'Do not include history context')
