@@ -3,3 +3,4 @@ coverage
 dist
 .env
 .DS_Store
+.claude/worktrees/
