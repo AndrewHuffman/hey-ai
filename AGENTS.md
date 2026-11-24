@@ -314,7 +314,6 @@ include:
 
 - Configured-but-unusable HTTP/SSE MCP transports.
 - Ineffective context flags and a `--show-context` mode that still calls an LLM.
-- Hard-coded runtime version drift.
 - Incorrect hybrid keyword ranking and missing legacy FTS backfill.
 - Eager state creation, incomplete cleanup, and limited test coverage.
 - MCP secret disclosure, tool-name collisions, partial schema/content support,

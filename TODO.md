@@ -36,7 +36,6 @@ None.
 
 - [ ] **Fix context flags:** Make `--no-history`, `--no-files`, and `--no-context` consistently control the documented context sources, tool exposure, and initialization costs—or remove obsolete options.
 - [ ] **Fix `--show-context`:** Print assembled context and exit without selecting/calling a model, saving history, or touching the clipboard.
-- [ ] **Source versions from package metadata:** Keep `hey-ai --version`, MCP client identity, package version, and release tag consistent.
 - [ ] **Use the async entrypoint correctly:** Replace broad filename-based main detection with an exact module check and await Commander through `parseAsync()`.
 - [ ] **Improve normal-mode errors:** Replace raw provider/API-key stack traces with actionable messages while preserving full diagnostics behind `--verbose`.
 
@@ -236,6 +235,7 @@ coverage linked from [Eval Framework](#eval-framework).
 - [x] **Set and test the supported Node range:** Declared Node `^22.13.0`; CI covers Node 22.13 plus the pinned Node 22.23.2 release runtime, and AI SDK 7 intentionally removes Node 20 support. (Commit: 7e9acd9; exact release pin refined in the current change.)
 - [x] **Gate release on verification:** Release now runs build, tests, the production audit, clean package creation, and installed-artifact smoke checks, then publishes that exact verified tarball. (Commits: 1dc1f81, 7e9acd9)
 - [x] **Eliminate CI/release toolchain drift:** PR CI and release share pinned Node/pnpm/npm setup and the same version, changelog, and verified-tarball preparation; PRs also exercise `npm publish --dry-run`. The package verifier accepts regression-tested npm 10 and npm 12 metadata shapes. (This follow-up change.)
+- [x] **Source versions from package metadata:** `hey-ai --version` and the MCP client identity now read the version from the installed `package.json` instead of a hard-coded `1.0.0`. The package smoke test requires the installed CLI to report the packed version. (This change.)
 
 ## Bugs
 

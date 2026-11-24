@@ -1,6 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { ConfigManager } from '../config.js';
+import { PACKAGE_VERSION } from '../version.js';
 
 export interface McpToolResult {
   success: boolean;
@@ -40,7 +41,7 @@ export class McpManager {
 
         const client = new Client({
           name: "hey-ai-client",
-          version: "1.0.0",
+          version: PACKAGE_VERSION,
         }, {
           capabilities: {}
         });

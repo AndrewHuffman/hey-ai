@@ -94,6 +94,7 @@ try {
   assert(packageRecord && typeof packageRecord === 'object', 'npm pack returned an invalid package record');
   assert(Array.isArray(packageRecord.files), 'npm pack metadata did not include a file inventory');
   assert(typeof packageRecord.filename === 'string', 'npm pack metadata did not include a filename');
+  assert(typeof packageRecord.version === 'string', 'npm pack metadata did not include a version');
   const inventory = packageRecord.files.map((file) => file.path).sort();
   const inventorySet = new Set(inventory);
   const expectedRuntimeModules = await listSourceModules(path.join(projectRoot, 'src'));
@@ -171,7 +172,10 @@ try {
   const models = run(executable, ['models'], { cwd: installDirectory, env: childEnvironment });
 
   assert(help.stdout.includes('Usage: hey-ai'), 'Installed CLI help output was unexpected');
-  assert(version.stdout.trim().length > 0, 'Installed CLI did not report a version');
+  assert(
+    version.stdout.trim() === packageRecord.version,
+    `Installed CLI reported version ${JSON.stringify(version.stdout.trim())}, expected package version ${packageRecord.version}`,
+  );
   assert(models.stdout.includes('Recommended Models:'), 'Installed CLI models output was unexpected');
 
   console.log(`Verified ${packageRecord.filename} (${inventory.length} files, ${packageRecord.size} bytes)`);
