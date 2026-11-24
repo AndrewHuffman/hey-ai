@@ -49,6 +49,9 @@ pnpm run build
 # Run the TypeScript entrypoint with tsx
 pnpm run dev -- "how do I find large files?"
 
+# Pass CLI flags to the TypeScript entrypoint without pnpm's `--`
+pnpm exec tsx src/index.ts --version
+
 # Run the compiled CLI
 pnpm run start -- "how do I find large files?"
 
@@ -60,6 +63,13 @@ The build removes `dist/` with `scripts/clean.mjs` before invoking `tsc`, so
 deleted source modules cannot survive as stale compiled output. After compilation,
 `scripts/make-cli-executable.mjs` sets `dist/index.js` to mode `0755` so existing
 CLI links keep working after every clean build. `prepack` runs the same build.
+
+Do not pass flags through `pnpm run dev --` or `pnpm run start --`. pnpm
+forwards the literal `--`, so Commander treats every later argument, including
+`--version` or `--help`, as the query text. That makes a real, billed model
+call with the maintainer's key, overwrites the clipboard, and saves the
+exchange to the real session history. Run `pnpm exec tsx src/index.ts <flags>`
+or `node dist/index.js <flags>` instead.
 
 ### Test
 
@@ -329,3 +339,54 @@ include:
 - Changelog and npm release automation run from `.github/workflows/release.yml`.
 - The release workflow currently force-pushes its generated version/changelog
   commit with `--force-with-lease`; treat release changes as high risk.
+
+### Worktrees
+
+Do each task in its own git worktree whenever possible, and keep the main
+checkout on `main`. This keeps concurrent tasks and agent sessions from
+sharing a working tree.
+
+- Create worktrees under `.claude/worktrees/<branch-slug>`, the location
+  Claude Code's worktree tool uses. The directory is gitignored. Jest ignores
+  `<rootDir>/.claude/worktrees/`, so a main-checkout test run does not also
+  run every worktree's copy of the suite.
+- For a new task, branch from the latest `origin/main`:
+  `git fetch origin && git worktree add .claude/worktrees/<slug> -b <branch> origin/main`.
+  A branch can be checked out in only one worktree at a time.
+- Run `pnpm install --frozen-lockfile` and `pnpm run build` in each new
+  worktree. It has its own `node_modules` and `dist/`, and pnpm links from the
+  shared store, so installs are fast.
+- Worktrees share the stash stack, hooks, and the maintainer's real
+  `~/.config/hey-ai`, docs cache, session database, and shell history. Never
+  use bare `git stash`/`git stash pop`; set work aside with a WIP commit.
+  Isolate home/config paths when running the CLI, as with any checkout.
+- After the PR merges, remove the worktree with `git worktree remove` and
+  delete the local branch.
+
+### Pull request workflow
+
+This is the standard workflow for every change:
+
+1. Work on a conventional branch name (`feat/…`, `fix/…`, `docs/…`) in a
+   worktree, never on `main`. Use one commit per concern, with a conventional
+   subject and a body that explains why.
+2. Before pushing, run `pnpm run build`, `pnpm test --runInBand --verbose`,
+   `pnpm run audit:prod`, and `pnpm run test:package`. CI blocks on the same
+   gates. Fix a failing gate in the PR, even one that already fails on `main`,
+   as a separate commit.
+3. Push and open the PR with `gh pr create`. The body has Summary, Changes,
+   and Verification sections. The Verification checklist states what was run
+   and what was not, for example whether any live model calls were made.
+   Copilot review is requested automatically.
+4. After every push, poll until all CI checks finish and a new review from
+   `copilot-pull-request-reviewer[bot]` arrives. Copilot usually reviews 3–20
+   minutes after a push. Compare against the latest existing Copilot review's
+   `submitted_at` (strictly newer), not the push time. Always pass
+   `--paginate` to `gh api` for `pulls/<n>/reviews` and `pulls/<n>/comments`,
+   because replies create review objects that push new reviews past page one.
+5. Address every reasonable comment: fix it with a regression test, then reply
+   on the thread with what changed. Reply with reasoning to a comment you
+   decline. Push the fixes and return to step 4.
+6. Stop when CI passes and the latest Copilot review leaves no reasonable
+   comment unaddressed. Do not merge: merging to `main` triggers the npm
+   release, so the maintainer merges.
